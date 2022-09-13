@@ -9,6 +9,13 @@
 #include "glog/logging.h"
 
 namespace lidar_localization {
+bool FileManager::IsDirectory(std::string directory_path) {
+    if (boost::filesystem::is_directory(directory_path)) {
+        return true;
+    }
+    return false;
+}
+
 bool FileManager::CreateFile(std::ofstream& ofs, std::string file_path) {
     ofs.close();
     boost::filesystem::remove(file_path.c_str());

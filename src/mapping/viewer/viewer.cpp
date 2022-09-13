@@ -45,6 +45,11 @@ bool Viewer::InitDataPath(const YAML::Node& config_node) {
     key_frames_path_ = data_path + "/slam_data/key_frames";
     map_path_ = data_path + "/slam_data/map";
 
+    while (!(FileManager::IsDirectory(data_path+"/slam_data")))
+    {
+        sleep(1);
+    }
+
     if (!FileManager::InitDirectory(map_path_, "点云地图文件"))
         return false;
 

@@ -9,6 +9,7 @@
 #include <pcl/common/transforms.h>
 #include <pcl/io/pcd_io.h>
 #include "glog/logging.h"
+#include <unistd.h>
 
 #include "lidar_localization/mapping/post_processing/post_processing.hpp"
 #include "lidar_localization/global_defination/global_defination.h"
@@ -48,9 +49,13 @@ bool Post_Processing::InitDataPath(const YAML::Node& config_node) {
     key_frames_path_ = data_path + "/slam_data";
     std::string key_frames_path=key_frames_path_+"/key_frames";
     std::string map_path=key_frames_path_+"/map";
-    if (!FileManager::CreateDirectory(key_frames_path))
-        return false;
 
+    //保证所依赖的文件夹在次之前就建好了
+    while (!(FileManager::IsDirectory(key_frames_path_)&&FileManager::IsDirectory(key_frames_path)))
+    {
+        sleep(1);
+    }
+    
     file_names_get_.ScanFiles(key_frames_path);
 
     if (!FileManager::InitDirectory(key_frames_path_ + "/post_key_frames","后处理之后的点云"))
