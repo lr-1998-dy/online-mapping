@@ -11,11 +11,11 @@
 namespace lidar_localization {
 DataPretreatFlow::DataPretreatFlow(ros::NodeHandle& nh) {
     // subscriber
-    cloud_sub_ptr_ = std::make_shared<CloudSubscriber>(nh, "/kitti/velo/pointcloud", 100000);
-    imu_sub_ptr_ = std::make_shared<IMUSubscriber>(nh, "/kitti/oxts/imu", 1000000);
-    velocity_sub_ptr_ = std::make_shared<VelocitySubscriber>(nh, "/kitti/oxts/gps/vel", 1000000);
-    gnss_sub_ptr_ = std::make_shared<GNSSSubscriber>(nh, "/kitti/oxts/gps/fix", 1000000);
-    lidar_to_imu_ptr_ = std::make_shared<TFListener>(nh, "/imu_link", "velo_link");
+    cloud_sub_ptr_ = std::make_shared<CloudSubscriber>(nh, "/imu_data", 100000);
+    imu_sub_ptr_ = std::make_shared<IMUSubscriber>(nh, "/lidar_aeb/raw_points", 1000000);
+    // velocity_sub_ptr_ = std::make_shared<VelocitySubscriber>(nh, "/kitti/oxts/gps/vel", 1000000);
+    // gnss_sub_ptr_ = std::make_shared<GNSSSubscriber>(nh, "/kitti/oxts/gps/fix", 1000000);
+    // lidar_to_imu_ptr_ = std::make_shared<TFListener>(nh, "/imu_link", "velo_link");
     // publisher
     cloud_pub_ptr_ = std::make_shared<CloudPublisher>(nh, "/synced_cloud", "/velo_link", 100);
     gnss_pub_ptr_ = std::make_shared<OdometryPublisher>(nh, "/synced_gnss", "/map", "/velo_link", 100);
@@ -48,24 +48,24 @@ bool DataPretreatFlow::ReadData() {
     cloud_sub_ptr_->ParseData(cloud_data_buff_);
 
     static std::deque<IMUData> unsynced_imu_;
-    static std::deque<VelocityData> unsynced_velocity_;
-    static std::deque<GNSSData> unsynced_gnss_;
+    // static std::deque<VelocityData> unsynced_velocity_;
+    // static std::deque<GNSSData> unsynced_gnss_;
 
     imu_sub_ptr_->ParseData(unsynced_imu_);
-    velocity_sub_ptr_->ParseData(unsynced_velocity_);
-    gnss_sub_ptr_->ParseData(unsynced_gnss_);
+    // velocity_sub_ptr_->ParseData(unsynced_velocity_);
+    // gnss_sub_ptr_->ParseData(unsynced_gnss_);
 
     if (cloud_data_buff_.size() == 0)
         return false;
 
     double cloud_time = cloud_data_buff_.front().time;
     bool valid_imu = IMUData::SyncData(unsynced_imu_, imu_data_buff_, cloud_time);
-    bool valid_velocity = VelocityData::SyncData(unsynced_velocity_, velocity_data_buff_, cloud_time);
-    bool valid_gnss = GNSSData::SyncData(unsynced_gnss_, gnss_data_buff_, cloud_time);
+    // bool valid_velocity = VelocityData::SyncData(unsynced_velocity_, velocity_data_buff_, cloud_time);
+    // bool valid_gnss = GNSSData::SyncData(unsynced_gnss_, gnss_data_buff_, cloud_time);
 
     static bool sensor_inited = false;
     if (!sensor_inited) {
-        if (!valid_imu || !valid_velocity || !valid_gnss) {
+        if (!valid_imu) {
             cloud_data_buff_.pop_front();
             return false;
         }
@@ -76,12 +76,12 @@ bool DataPretreatFlow::ReadData() {
 }
 
 bool DataPretreatFlow::InitCalibration() {
-    static bool calibration_received = false;
-    if (!calibration_received) {
-        if (lidar_to_imu_ptr_->LookupData(lidar_to_imu_)) {
-            calibration_received = true;
-        }
-    }
+    static bool calibration_received = true;
+    // if (!calibration_received) {
+    //     if (lidar_to_imu_ptr_->LookupData(lidar_to_imu_)) {
+    //         calibration_received = true;
+    //     }
+    // }
 
     return calibration_received;
 }
