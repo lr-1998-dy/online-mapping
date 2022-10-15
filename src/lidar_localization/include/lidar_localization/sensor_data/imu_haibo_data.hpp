@@ -32,11 +32,28 @@ class IMUHaiboData {
     };
 
 
-    class EulerAngles {
+    struct EulerAngles {
       public:
         double roll = 0.0;
         double yall = 0.0;
         double pitch = 0.0;
+    };
+
+    class Orientation {
+      public:
+        double x = 0.0;
+        double y = 0.0;
+        double z = 0.0;
+        double w = 0.0;
+      
+      public:
+        void Normlize() {
+          double norm = sqrt(pow(x, 2.0) + pow(y, 2.0) + pow(z, 2.0) + pow(w, 2.0));
+          x /= norm;
+          y /= norm;
+          z /= norm;
+          w /= norm;
+        }
     };
 
     class EulerAngles {
