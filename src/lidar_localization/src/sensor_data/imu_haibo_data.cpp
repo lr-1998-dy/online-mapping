@@ -25,7 +25,7 @@ void IMUHaiboData::GetENUPosition(){
 
     orientation=matrix.inverse();
     
-    geo_converter.Forward(llh.lat, llh.lon, llh.alt, position.x, position.y,position.z);
+    geo_converter.Forward(llh.lat, llh.lon, llh.alt, position[0], position[1],position[2]);
 }
 
 Eigen::Matrix3f IMUHaiboData::GetOrientationMatrix() {
