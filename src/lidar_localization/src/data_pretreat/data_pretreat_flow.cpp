@@ -22,13 +22,13 @@ DataPretreatFlow::DataPretreatFlow(ros::NodeHandle& nh) {
 }
 
 bool DataPretreatFlow::Run() {
-    if (!ReadData())
-        return false;
-
     if (!InitCalibration()) 
         return false;
 
     if (!InitGNSS())
+        return false;
+
+    if (!ReadData())
         return false;
 
     while(HasData()) {

@@ -53,7 +53,8 @@ class IMUHaiboData {
   static bool origin_position_inited;
 
   public:
-  void InitOriginPosition(double latitude,double longitude,double altitude);
+    void InitOriginPosition(double latitude,double longitude,double altitude);
+    void GetENUPosition();
     // 把四元数转换成旋转矩阵送出去
     void GetEulerAnglesOrientation();
     Eigen::Matrix3f GetOrientationMatrix();

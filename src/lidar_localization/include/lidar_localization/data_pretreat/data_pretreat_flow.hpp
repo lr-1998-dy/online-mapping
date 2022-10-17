@@ -1,6 +1,6 @@
 /*
  * @Author: Li Rui
- * @LastEditTime: 2022-10-15 10:39:58
+ * @LastEditTime: 2022-10-17 14:11:04
  * @LastEditors: lr 2012227985@qq.com
  * @Description: 所有模块的最前端，数据预处理模块；包括坐标系对齐（GNSS转为lidar系）、时间同步、点云去畸变等
  */
@@ -52,12 +52,12 @@ class DataPretreatFlow {
     Eigen::Matrix4f lidar_to_imu_ = Eigen::Matrix4f::Identity();
 
     std::deque<CloudData> cloud_data_buff_;
-    std::deque<IMUData> imu_data_buff_;
+    std::deque<IMUHaiboData> imu_data_buff_;
     std::deque<VelocityData> velocity_data_buff_;
     std::deque<GNSSData> gnss_data_buff_;
 
     CloudData current_cloud_data_;
-    IMUData current_imu_data_;
+    IMUHaiboData current_imu_data_;
     VelocityData current_velocity_data_;
     GNSSData current_gnss_data_;
 

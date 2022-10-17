@@ -24,13 +24,12 @@ void IMUHaiboData::GetENUPosition(){
                 Eigen::AngleAxisd(euler_angles.pitch * torad_, Eigen::Vector3d::UnitX());
 
     orientation=matrix.inverse();
-
-
+    
+    geo_converter.Forward(llh.lat, llh.lon, llh.alt, position.x, position.y,position.z);
 }
 
 Eigen::Matrix3f IMUHaiboData::GetOrientationMatrix() {
     Eigen::Matrix3f matrix = orientation.matrix().cast<float>();
-
     return matrix;
 }
 
@@ -72,18 +71,18 @@ bool IMUHaiboData::SyncData(std::deque<IMUHaiboData>& UnsyncedData, std::deque<I
     // synced_data.angular_velocity.x = front_data.angular_velocity.x * front_scale + back_data.angular_velocity.x * back_scale;
     // synced_data.angular_velocity.y = front_data.angular_velocity.y * front_scale + back_data.angular_velocity.y * back_scale;
     // synced_data.angular_velocity.z = front_data.angular_velocity.z * front_scale + back_data.angular_velocity.z * back_scale;
-  
-    //位置线性插值
-
-  
+      
     // 四元数插值有线性插值和球面插值，球面插值更准确，但是两个四元数差别不大是，二者精度相当
     // 由于是对相邻两时刻姿态插值，姿态差比较小，所以可以用线性插值
-    synced_data.orientation.x = front_data.orientation.x * front_scale + back_data.orientation.x * back_scale;
-    synced_data.orientation.y = front_data.orientation.y * front_scale + back_data.orientation.y * back_scale;
-    synced_data.orientation.z = front_data.orientation.z * front_scale + back_data.orientation.z * back_scale;
-    synced_data.orientation.w = front_data.orientation.w * front_scale + back_data.orientation.w * back_scale;
+    // synced_data.orientation.x = front_data.orientation.x * front_scale + back_data.orientation.x * back_scale;
+    // synced_data.orientation.y = front_data.orientation.y * front_scale + back_data.orientation.y * back_scale;
+    // synced_data.orientation.z = front_data.orientation.z * front_scale + back_data.orientation.z * back_scale;
+    // synced_data.orientation.w = front_data.orientation.w * front_scale + back_data.orientation.w * back_scale;
     // 线性插值之后要归一化
-    synced_data.orientation.Normlize();
+    // synced_data.orientation.Normlize();
+
+    synced_data.orientation = front_data.orientation.slerp(back_scale, back_data.orientation);
+    synced_data.position = back_scale * (back_data.position - front_data.position) + front_data.position;
 
     SyncedData.push_back(synced_data);
 

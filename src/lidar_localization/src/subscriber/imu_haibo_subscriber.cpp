@@ -16,7 +16,15 @@ void IMUHaiboSubscriber::msg_callback(const sensor_msgs::ImuConstPtr& imu_msg_pt
     IMUHaiboData imu_data;
     imu_data.time = imu_msg_ptr->header.stamp.toSec();
 
-    imu_data
+    imu_data.llh.lat=imu_msg_ptr->orientation.x;
+    imu_data.llh.lon=imu_msg_ptr->orientation.y;
+    imu_data.llh.alt=imu_msg_ptr->orientation.z;
+
+    imu_data.euler_angles.roll=imu_msg_ptr->orientation_covariance[1];
+    imu_data.euler_angles.yall=imu_msg_ptr->orientation.w;
+    imu_data.euler_angles.pitch=imu_msg_ptr->orientation_covariance[0];
+
+    imu_data.GetENUPosition();
 
     new_imu_data_.push_back(imu_data);
 }
