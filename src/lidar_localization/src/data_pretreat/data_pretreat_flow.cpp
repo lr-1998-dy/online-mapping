@@ -13,12 +13,11 @@ namespace lidar_localization {
 DataPretreatFlow::DataPretreatFlow(ros::NodeHandle& nh) {
     // subscriber
     cloud_sub_ptr_ = std::make_shared<CloudSubscriber>(nh, "/imu_data", 100000);
-    imu_sub_ptr_ = std::make_shared<IMUSubscriber>(nh, "/lidar_aeb/raw_points", 1000000);
+    imu_sub_ptr_ = std::make_shared<IMUHaiboSubscriber>(nh, "/lidar_aeb/raw_points", 1000000);
     // publisher
     cloud_pub_ptr_ = std::make_shared<CloudPublisher>(nh, "/synced_cloud", "/velo_link", 100);
     gnss_pub_ptr_ = std::make_shared<OdometryPublisher>(nh, "/synced_gnss", "/map", "/velo_link", 100);
 
-    distortion_adjust_ptr_ = std::make_shared<DistortionAdjust>();
 }
 
 bool DataPretreatFlow::Run() {
@@ -74,13 +73,13 @@ bool DataPretreatFlow::InitCalibration() {
     {
         std::string config_file_path = WORK_SPACE_PATH + "/config/mapping/data_pretreat.yaml";
         YAML::Node config_node = YAML::LoadFile(config_file_path);
-        vector<float> lidar_to_imu= config_node["ori_longitude_"].as<vector<float>>();
+        std::vector<float> lidar_to_imu= config_node["lidar2imu_"].as<std::vector<float>>();
       
-        for (int row = 0; i < lidar_to_imu_.row; i++)
+        for (int row = 0; row < lidar_to_imu_.rows(); row++)
         {
-            for (int col = 0; i < lidar_to_imu_.col; i++)
+            for (int col = 0; col < lidar_to_imu_.cols(); col++)
             {
-                lidar_to_imu_(row, col)=lidar_to_imu[col + row * lidar_to_imu_.col];
+                lidar_to_imu_(row, col)=lidar_to_imu[col + row * lidar_to_imu_.cols()];
             }
         }
         calibration_received=true;
@@ -95,9 +94,9 @@ bool DataPretreatFlow::InitGNSS() {
         std::string config_file_path = WORK_SPACE_PATH + "/config/mapping/data_pretreat.yaml";
         YAML::Node config_node = YAML::LoadFile(config_file_path);
 
-        double ori_longitude_=config_node["ori_longitude_"].as<double>();
-        double ori_latitude_=config_node["ori_latitude_"].as<double>();
-        double ori_altitude_=config_node["ori_altitude_"].as<double>();
+        double ori_longitude_=config_node["map"]["ori_longitude_"].as<double>();
+        double ori_latitude_=config_node["map"]["ori_latitude_"].as<double>();
+        double ori_altitude_=config_node["map"]["ori_altitude_"].as<double>();
 
         IMUHaiboData imu_data=imu_data_buff_.front();
         imu_data.InitOriginPosition(ori_latitude_,ori_longitude_,ori_altitude_);
@@ -141,20 +140,18 @@ bool DataPretreatFlow::ValidData() {
 bool DataPretreatFlow::TransformData() {
     gnss_pose_ = Eigen::Matrix4f::Identity();
 
-    current_gnss_data_.UpdateXYZ();
-    gnss_pose_(0,3) = current_gnss_data_.local_E;
-    gnss_pose_(1,3) = current_gnss_data_.local_N;
-    gnss_pose_(2,3) = current_gnss_data_.local_U;
+    gnss_pose_(0,3) = current_imu_data_.position[0];
+    gnss_pose_(1,3) = current_imu_data_.position[1];
+    gnss_pose_(2,3) = current_imu_data_.position[2];
     gnss_pose_.block<3,3>(0,0) = current_imu_data_.GetOrientationMatrix();
     gnss_pose_ *= lidar_to_imu_;
-
 
     return true;
 }
 
 bool DataPretreatFlow::PublishData() {
     cloud_pub_ptr_->Publish(current_cloud_data_.cloud_ptr, current_cloud_data_.time);
-    gnss_pub_ptr_->Publish(gnss_pose_, current_gnss_data_.time);
+    gnss_pub_ptr_->Publish(gnss_pose_, current_imu_data_.time);
 
     return true;
 }

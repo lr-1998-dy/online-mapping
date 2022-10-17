@@ -4,12 +4,12 @@ data_path: ./   # 数据存放路径
 key_frame_distance: 2.0 # 关键帧距离
 
 map:
-  longitude: 121.439743
-  latitude: 31.0263253
-  height: 15.866
+  ori_longitude_: 121.439743
+  ori_latitude_: 31.0263253
+  ori_height_: 15.866
 
 
-lidar2imu: [ 1, 0, 0,0,
+lidar2imu_: [ 1, 0, 0,0,
                          0, 1,0,0, 
                          0, 0,1,0,
                          0,0,0,1]
