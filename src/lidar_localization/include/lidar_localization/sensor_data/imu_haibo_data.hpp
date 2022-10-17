@@ -1,7 +1,7 @@
 /*
  * @Description: 
  * @Author: Li Rui
- * @Date: 2019-07-17 18:27:40
+ * @Date: 2022-07-17 18:27:40
  */
 #ifndef LIDAR_LOCALIZATION_SENSOR_DATA_IMU_HAIBO_DATA_HPP_
 #define LIDAR_LOCALIZATION_SENSOR_DATA_IMU_HAIBO_DATA_HPP_
@@ -9,6 +9,7 @@
 #include <deque>
 #include <cmath>
 #include <Eigen/Dense>
+#include "Geocentric/LocalCartesian.hpp"
 
 namespace lidar_localization {
 class IMUHaiboData {
@@ -25,13 +26,6 @@ class IMUHaiboData {
       double z = 0.0;
     };
 
-    struct Position {
-      double x = 0.0;
-      double y = 0.0;
-      double z = 0.0;
-    };
-
-
     struct EulerAngles {
       public:
         double roll = 0.0;
@@ -39,41 +33,30 @@ class IMUHaiboData {
         double pitch = 0.0;
     };
 
-    class Orientation {
-      public:
-        double x = 0.0;
-        double y = 0.0;
-        double z = 0.0;
-        double w = 0.0;
-      
-      public:
-        void Normlize() {
-          double norm = sqrt(pow(x, 2.0) + pow(y, 2.0) + pow(z, 2.0) + pow(w, 2.0));
-          x /= norm;
-          y /= norm;
-          z /= norm;
-          w /= norm;
-        }
+    struct LLH{
+      double lat = 0.0;
+      double lon = 0.0;
+      double alt = 0.0;
     };
-
-    class EulerAngles {
-      public:
-        double roll = 0.0;
-        double yall = 0.0;
-        double pitch = 0.0;
-    };
-
 
     double time = 0.0;
     double torad_=M_PI / 180;
     LinearAcceleration linear_acceleration;
     AngularVelocity angular_velocity;
-    Position position;
+    LLH llh;
+    Eigen::Vector3d position;
     EulerAngles euler_angles;
+    Eigen::Quaterniond orientation;
+
+  private:
+  static GeographicLib::LocalCartesian geo_converter;
+  static bool origin_position_inited;
 
   public:
+  void InitOriginPosition(double latitude,double longitude,double altitude);
     // 把四元数转换成旋转矩阵送出去
-    Eigen::Matrix3f GetEulerAnglesMatrix();
+    void GetEulerAnglesOrientation();
+    Eigen::Matrix3f GetOrientationMatrix();
     static bool SyncData(std::deque<IMUHaiboData>& UnsyncedData, std::deque<IMUHaiboData>& SyncedData, double sync_time);
 };
 }

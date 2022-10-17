@@ -7,15 +7,13 @@
 
 #include "glog/logging.h"
 #include "lidar_localization/global_defination/global_defination.h"
+#include<vector>
 
 namespace lidar_localization {
 DataPretreatFlow::DataPretreatFlow(ros::NodeHandle& nh) {
     // subscriber
     cloud_sub_ptr_ = std::make_shared<CloudSubscriber>(nh, "/imu_data", 100000);
     imu_sub_ptr_ = std::make_shared<IMUSubscriber>(nh, "/lidar_aeb/raw_points", 1000000);
-    // velocity_sub_ptr_ = std::make_shared<VelocitySubscriber>(nh, "/kitti/oxts/gps/vel", 1000000);
-    // gnss_sub_ptr_ = std::make_shared<GNSSSubscriber>(nh, "/kitti/oxts/gps/fix", 1000000);
-    // lidar_to_imu_ptr_ = std::make_shared<TFListener>(nh, "/imu_link", "velo_link");
     // publisher
     cloud_pub_ptr_ = std::make_shared<CloudPublisher>(nh, "/synced_cloud", "/velo_link", 100);
     gnss_pub_ptr_ = std::make_shared<OdometryPublisher>(nh, "/synced_gnss", "/map", "/velo_link", 100);
@@ -47,21 +45,15 @@ bool DataPretreatFlow::Run() {
 bool DataPretreatFlow::ReadData() {
     cloud_sub_ptr_->ParseData(cloud_data_buff_);
 
-    static std::deque<IMUData> unsynced_imu_;
-    // static std::deque<VelocityData> unsynced_velocity_;
-    // static std::deque<GNSSData> unsynced_gnss_;
+    static std::deque<IMUHaiboData> unsynced_imu_;
 
     imu_sub_ptr_->ParseData(unsynced_imu_);
-    // velocity_sub_ptr_->ParseData(unsynced_velocity_);
-    // gnss_sub_ptr_->ParseData(unsynced_gnss_);
 
     if (cloud_data_buff_.size() == 0)
         return false;
 
     double cloud_time = cloud_data_buff_.front().time;
-    bool valid_imu = IMUData::SyncData(unsynced_imu_, imu_data_buff_, cloud_time);
-    // bool valid_velocity = VelocityData::SyncData(unsynced_velocity_, velocity_data_buff_, cloud_time);
-    // bool valid_gnss = GNSSData::SyncData(unsynced_gnss_, gnss_data_buff_, cloud_time);
+    bool valid_imu = IMUHaiboData::SyncData(unsynced_imu_, imu_data_buff_, cloud_time);
 
     static bool sensor_inited = false;
     if (!sensor_inited) {
@@ -76,21 +68,40 @@ bool DataPretreatFlow::ReadData() {
 }
 
 bool DataPretreatFlow::InitCalibration() {
-    static bool calibration_received = true;
-    // if (!calibration_received) {
-    //     if (lidar_to_imu_ptr_->LookupData(lidar_to_imu_)) {
-    //         calibration_received = true;
-    //     }
-    // }
+    static bool calibration_received = false;
 
+    if (!calibration_received)
+    {
+        std::string config_file_path = WORK_SPACE_PATH + "/config/mapping/data_pretreat.yaml";
+        YAML::Node config_node = YAML::LoadFile(config_file_path);
+        vector<float> lidar_to_imu= config_node["ori_longitude_"].as<vector<float>>();
+      
+        for (int row = 0; i < lidar_to_imu_.row; i++)
+        {
+            for (int col = 0; i < lidar_to_imu_.col; i++)
+            {
+                lidar_to_imu_(row, col)=lidar_to_imu[col + row * lidar_to_imu_.col];
+            }
+        }
+        calibration_received=true;
+    }
+    
     return calibration_received;
 }
 
 bool DataPretreatFlow::InitGNSS() {
     static bool gnss_inited = false;
     if (!gnss_inited) {
-        GNSSData gnss_data = gnss_data_buff_.front();
-        gnss_data.InitOriginPosition();
+        std::string config_file_path = WORK_SPACE_PATH + "/config/mapping/data_pretreat.yaml";
+        YAML::Node config_node = YAML::LoadFile(config_file_path);
+
+        double ori_longitude_=config_node["ori_longitude_"].as<double>();
+        double ori_latitude_=config_node["ori_latitude_"].as<double>();
+        double ori_altitude_=config_node["ori_altitude_"].as<double>();
+
+        IMUHaiboData imu_data=imu_data_buff_.front();
+        imu_data.InitOriginPosition(ori_latitude_,ori_longitude_,ori_altitude_);
+
         gnss_inited = true;
     }
 
@@ -102,10 +113,6 @@ bool DataPretreatFlow::HasData() {
         return false;
     if (imu_data_buff_.size() == 0)
         return false;
-    if (velocity_data_buff_.size() == 0)
-        return false;
-    if (gnss_data_buff_.size() == 0)
-        return false;
 
     return true;
 }
@@ -113,13 +120,9 @@ bool DataPretreatFlow::HasData() {
 bool DataPretreatFlow::ValidData() {
     current_cloud_data_ = cloud_data_buff_.front();
     current_imu_data_ = imu_data_buff_.front();
-    current_velocity_data_ = velocity_data_buff_.front();
-    current_gnss_data_ = gnss_data_buff_.front();
 
     double diff_imu_time = current_cloud_data_.time - current_imu_data_.time;
-    double diff_velocity_time = current_cloud_data_.time - current_velocity_data_.time;
-    double diff_gnss_time = current_cloud_data_.time - current_gnss_data_.time;
-    if (diff_imu_time < -0.05 || diff_velocity_time < -0.05 || diff_gnss_time < -0.05) {
+    if (diff_imu_time < -0.05 ) {
         cloud_data_buff_.pop_front();
         return false;
     }
@@ -129,20 +132,8 @@ bool DataPretreatFlow::ValidData() {
         return false;
     }
 
-    if (diff_velocity_time > 0.05) {
-        velocity_data_buff_.pop_front();
-        return false;
-    }
-
-    if (diff_gnss_time > 0.05) {
-        gnss_data_buff_.pop_front();
-        return false;
-    }
-
     cloud_data_buff_.pop_front();
     imu_data_buff_.pop_front();
-    velocity_data_buff_.pop_front();
-    gnss_data_buff_.pop_front();
 
     return true;
 }
@@ -157,9 +148,6 @@ bool DataPretreatFlow::TransformData() {
     gnss_pose_.block<3,3>(0,0) = current_imu_data_.GetOrientationMatrix();
     gnss_pose_ *= lidar_to_imu_;
 
-    current_velocity_data_.TransformCoordinate(lidar_to_imu_);
-    distortion_adjust_ptr_->SetMotionInfo(0.1, current_velocity_data_);
-    distortion_adjust_ptr_->AdjustCloud(current_cloud_data_.cloud_ptr, current_cloud_data_.cloud_ptr);
 
     return true;
 }

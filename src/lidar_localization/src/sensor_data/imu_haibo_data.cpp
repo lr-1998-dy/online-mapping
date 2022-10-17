@@ -4,20 +4,32 @@
  * @Date: 2022-02-23 22:20:41
  */
 #include "lidar_localization/sensor_data/imu_haibo_data.hpp"
-
-
 #include <cmath>
 #include "glog/logging.h"
 
+bool lidar_localization::IMUHaiboData::origin_position_inited = false;
+GeographicLib::LocalCartesian lidar_localization::IMUHaiboData::geo_converter;
+
 namespace lidar_localization {
-Eigen::Matrix3f IMUHaiboData::GetEulerAnglesMatrix() {
+void IMUHaiboData::InitOriginPosition(double latitude,double longitude,double altitude) {
+    geo_converter.Reset(latitude, longitude, altitude);
+    origin_position_inited = true;
+}
+
+void IMUHaiboData::GetENUPosition(){
     Eigen::Matrix3f matrix = MatrixXf::Identity(3, 3);
 
     matrix = Eigen::AngleAxisd(euler_angles.yall * torad_, Eigen::Vector3d::UnitZ()) *
                 Eigen::AngleAxisd(euler_angles.roll * torad_, Eigen::Vector3d::UnitY()) *
                 Eigen::AngleAxisd(euler_angles.pitch * torad_, Eigen::Vector3d::UnitX());
 
-    matrix=matrix.transpose();
+    orientation=matrix.inverse();
+
+
+}
+
+Eigen::Matrix3f IMUHaiboData::GetOrientationMatrix() {
+    Eigen::Matrix3f matrix = orientation.matrix().cast<float>();
 
     return matrix;
 }
@@ -54,12 +66,16 @@ bool IMUHaiboData::SyncData(std::deque<IMUHaiboData>& UnsyncedData, std::deque<I
     double front_scale = (back_data.time - sync_time) / (back_data.time - front_data.time);
     double back_scale = (sync_time - front_data.time) / (back_data.time - front_data.time);
     synced_data.time = sync_time;
-    synced_data.linear_acceleration.x = front_data.linear_acceleration.x * front_scale + back_data.linear_acceleration.x * back_scale;
-    synced_data.linear_acceleration.y = front_data.linear_acceleration.y * front_scale + back_data.linear_acceleration.y * back_scale;
-    synced_data.linear_acceleration.z = front_data.linear_acceleration.z * front_scale + back_data.linear_acceleration.z * back_scale;
-    synced_data.angular_velocity.x = front_data.angular_velocity.x * front_scale + back_data.angular_velocity.x * back_scale;
-    synced_data.angular_velocity.y = front_data.angular_velocity.y * front_scale + back_data.angular_velocity.y * back_scale;
-    synced_data.angular_velocity.z = front_data.angular_velocity.z * front_scale + back_data.angular_velocity.z * back_scale;
+    // synced_data.linear_acceleration.x = front_data.linear_acceleration.x * front_scale + back_data.linear_acceleration.x * back_scale;
+    // synced_data.linear_acceleration.y = front_data.linear_acceleration.y * front_scale + back_data.linear_acceleration.y * back_scale;
+    // synced_data.linear_acceleration.z = front_data.linear_acceleration.z * front_scale + back_data.linear_acceleration.z * back_scale;
+    // synced_data.angular_velocity.x = front_data.angular_velocity.x * front_scale + back_data.angular_velocity.x * back_scale;
+    // synced_data.angular_velocity.y = front_data.angular_velocity.y * front_scale + back_data.angular_velocity.y * back_scale;
+    // synced_data.angular_velocity.z = front_data.angular_velocity.z * front_scale + back_data.angular_velocity.z * back_scale;
+  
+    //位置线性插值
+
+  
     // 四元数插值有线性插值和球面插值，球面插值更准确，但是两个四元数差别不大是，二者精度相当
     // 由于是对相邻两时刻姿态插值，姿态差比较小，所以可以用线性插值
     synced_data.orientation.x = front_data.orientation.x * front_scale + back_data.orientation.x * back_scale;
