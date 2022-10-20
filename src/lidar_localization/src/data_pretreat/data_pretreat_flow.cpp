@@ -9,11 +9,14 @@
 #include "lidar_localization/global_defination/global_defination.h"
 #include<vector>
 
+//model
+#include"lidar_localization/models/cloud_filter/range_filter.hpp"
+
 namespace lidar_localization {
 DataPretreatFlow::DataPretreatFlow(ros::NodeHandle& nh) {
     // subscriber
-    cloud_sub_ptr_ = std::make_shared<CloudSubscriber>(nh, "/imu_data", 100000);
-    imu_sub_ptr_ = std::make_shared<IMUHaiboSubscriber>(nh, "/lidar_aeb/raw_points", 1000000);
+    cloud_sub_ptr_ = std::make_shared<CloudSubscriber>(nh, "/lidar_aeb/raw_points", 100000);
+    imu_sub_ptr_ = std::make_shared<IMUHaiboSubscriber>(nh, "/imu_data", 1000000);
     // publisher
     cloud_pub_ptr_ = std::make_shared<CloudPublisher>(nh, "/synced_cloud", "/velo_link", 100);
     gnss_pub_ptr_ = std::make_shared<OdometryPublisher>(nh, "/synced_gnss", "/map", "/velo_link", 100);
@@ -25,6 +28,9 @@ bool DataPretreatFlow::Run() {
         return false;
 
     if (!InitGNSS())
+        return false;
+
+    if (!InitFilter())
         return false;
 
     if (!ReadData())
@@ -107,6 +113,21 @@ bool DataPretreatFlow::InitGNSS() {
     return gnss_inited;
 }
 
+bool DataPretreatFlow::InitFilter() {
+    static bool filter_inited = false;
+    if (!filter_inited) {
+        std::string config_file_path = WORK_SPACE_PATH + "/config/mapping/data_pretreat.yaml";
+        YAML::Node config_node = YAML::LoadFile(config_file_path);
+
+        //model
+        range_filter_ptr_=std::make_shared<RangeFilter>(config_node["range_filter"]);
+
+        filter_inited = true;
+    }
+
+    return filter_inited;
+}
+
 bool DataPretreatFlow::HasData() {
     if (cloud_data_buff_.size() == 0)
         return false;
@@ -146,11 +167,14 @@ bool DataPretreatFlow::TransformData() {
     gnss_pose_.block<3,3>(0,0) = current_imu_data_.GetOrientationMatrix();
     gnss_pose_ *= lidar_to_imu_;
 
+    range_filter_ptr_->Filter(current_cloud_data_.cloud_ptr,filtered_cloud_data_.cloud_ptr);
+
     return true;
 }
 
 bool DataPretreatFlow::PublishData() {
-    cloud_pub_ptr_->Publish(current_cloud_data_.cloud_ptr, current_cloud_data_.time);
+    cloud_pub_ptr_->Publish(filtered_cloud_data_.cloud_ptr, current_cloud_data_.time);
+    // cloud_pub_ptr_->Publish(current_cloud_data_.cloud_ptr, current_cloud_data_.time);
     gnss_pub_ptr_->Publish(gnss_pose_, current_imu_data_.time);
 
     return true;

@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_srvs
   ndt_omp
   irls_ndt
+  sensor_msgs
 )
 
 add_service_files(

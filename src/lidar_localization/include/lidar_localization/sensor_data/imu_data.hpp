@@ -9,6 +9,7 @@
 #include <deque>
 #include <cmath>
 #include <Eigen/Dense>
+#include <sensor_msgs/Imu.h>
 
 namespace lidar_localization {
 class IMUData {

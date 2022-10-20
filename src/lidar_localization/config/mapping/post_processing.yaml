@@ -1,3 +1,5 @@
+data_path: ./   # 数据存放路径
+
 ENU:
   longitude: 121.439743
   latitude: 31.0263253

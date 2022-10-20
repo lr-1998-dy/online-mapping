@@ -53,6 +53,7 @@ class FrontEnd {
 
     Eigen::Matrix4f init_pose_ = Eigen::Matrix4f::Identity();
     Eigen::Matrix4f init_gnss_pose_ = Eigen::Matrix4f::Identity();
+    static Eigen::Matrix4f last_gnss_pose_;
 
     float key_frame_distance_ = 2.0;
     int local_frame_num_ = 20;

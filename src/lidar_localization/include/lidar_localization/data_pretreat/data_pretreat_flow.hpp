@@ -1,6 +1,6 @@
 /*
  * @Author: Li Rui
- * @LastEditTime: 2022-10-17 15:37:24
+ * @LastEditTime: 2022-10-18 11:03:50
  * @LastEditors: lr 2012227985@qq.com
  * @Description: 所有模块的最前端，数据预处理模块；包括坐标系对齐（GNSS转为lidar系）、时间同步、点云去畸变等
  */
@@ -18,7 +18,8 @@
 #include "lidar_localization/publisher/cloud_publisher.hpp"
 #include "lidar_localization/publisher/odometry_publisher.hpp"
 // models
-#include "lidar_localization/models/scan_adjust/distortion_adjust.hpp"
+#include "lidar_localization/models/cloud_filter/cloud_filter_interface.hpp"
+
 
 #include <yaml-cpp/yaml.h>
 #include<vector>
@@ -34,6 +35,7 @@ class DataPretreatFlow {
     bool ReadData();
     bool InitCalibration();
     bool InitGNSS();
+    bool InitFilter();
     bool HasData();
     bool ValidData();
     bool TransformData();
@@ -50,7 +52,7 @@ class DataPretreatFlow {
     std::shared_ptr<CloudPublisher> cloud_pub_ptr_;
     std::shared_ptr<OdometryPublisher> gnss_pub_ptr_;
     // models
-    std::shared_ptr<DistortionAdjust> distortion_adjust_ptr_;
+    std::shared_ptr<CloudFilterInterface> range_filter_ptr_;
 
     Eigen::Matrix4f lidar_to_imu_ = Eigen::Matrix4f::Identity();
 
@@ -63,7 +65,7 @@ class DataPretreatFlow {
     IMUHaiboData current_imu_data_;
     // VelocityData current_velocity_data_;
     // GNSSData current_gnss_data_;
-
+    CloudData filtered_cloud_data_;
     Eigen::Matrix4f gnss_pose_ = Eigen::Matrix4f::Identity();
 };
 }

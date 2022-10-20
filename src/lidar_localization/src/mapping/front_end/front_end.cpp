@@ -25,6 +25,8 @@
 #include <pcl/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
 
+Eigen::Matrix4f lidar_localization::FrontEnd::last_gnss_pose_ = Eigen::Matrix4f::Identity();
+
 namespace lidar_localization {
 FrontEnd::FrontEnd()
     :local_map_ptr_(new CloudData::CLOUD()) {
@@ -146,11 +148,19 @@ bool FrontEnd::Update(const CloudData& cloud_data, Eigen::Matrix4f& cloud_pose,c
     CloudData::CLOUD_PTR filtered_cloud_ptr(new CloudData::CLOUD());
     frame_filter_ptr_->Filter(current_frame_.cloud_data.cloud_ptr, filtered_cloud_ptr);
 
+    //use 
     // static Eigen::Matrix4f step_pose = Eigen::Matrix4f::Identity();
     // static Eigen::Matrix4f last_pose = init_pose_;
     // static Eigen::Matrix4f predict_pose = predict_pose;
+
+    //use   rtk as predict_pose
     Eigen::Matrix4f predict_pose=init_gnss_pose_.inverse()*predict_gnsspose;
     static Eigen::Matrix4f last_key_frame_pose = init_pose_;
+
+    // //use   rtk as predict_pose
+    // Eigen::Matrix4f predict_pose=init_gnss_pose_.inverse()*predict_gnsspose;
+    // static Eigen::Matrix4f last_key_frame_pose = init_pose_;
+
 
     // 局部地图容器中没有关键帧，代表是第一帧数据
     // 此时把当前帧数据作为第一个关键帧，并更新局部地图容器和全局地图容器
