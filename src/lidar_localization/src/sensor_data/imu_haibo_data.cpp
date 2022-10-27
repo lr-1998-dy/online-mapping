@@ -19,7 +19,17 @@ void IMUHaiboData::InitOriginPosition(double latitude,double longitude,double al
 void IMUHaiboData::GetENUPosition(){
     Eigen::Matrix3d matrix = Eigen::Matrix3d::Identity(3, 3);
 
-    matrix = Eigen::AngleAxisd(euler_angles.yall * torad_-M_PI/2, Eigen::Vector3d::UnitZ()) *
+    // double d_yall=euler_angles.yall;
+    // if (d_yall>270)
+    // {
+    //     d_yall=(360.0+90.0-d_yall);
+    // }else
+    // {
+    //     d_yall=(90.0-d_yall);
+    // }
+    // euler_angles.yall=d_yall;
+    
+    matrix = Eigen::AngleAxisd(euler_angles.yall * torad_, Eigen::Vector3d::UnitZ()) *
                 Eigen::AngleAxisd(euler_angles.roll * torad_, Eigen::Vector3d::UnitY()) *
                 Eigen::AngleAxisd(euler_angles.pitch * torad_, Eigen::Vector3d::UnitX());
 

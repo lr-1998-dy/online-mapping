@@ -2,13 +2,19 @@ data_path: ./   # 数据存放路径
 
 # 之所以要提供no_filter（即不滤波）模式，是因为闭环检测对计算时间要求没那么高，而点云越稠密，精度就越高，所以滤波与否都有道理
 map_filter: voxel_filter # 选择滑窗地图点云滤波方法，目前支持：voxel_filter、no_filter
-global_map_filter: ground_filter # 选择当前帧点云滤波方法，目前支持：voxel_filter、no_filter
+global_map_filter: ground_filter 
+post_map_filter: post_ground_filter 
 global_map_rasterization: elevation_rasterization
 # 各配置选项对应参数
 ## 地面滤除相关参数
 ground_filter:
     opt_coeff : 1
-    dist_threshold : 0.3
+    dist_threshold : 0.6
+    max_iter : 1000
+#postmap地面滤除相关参数
+post_ground_filter:
+    opt_coeff : 1
+    dist_threshold : 0.6
     max_iter : 1000
 ## 滤波相关参数
 voxel_filter:

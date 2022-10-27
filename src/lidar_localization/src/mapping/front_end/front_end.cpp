@@ -141,6 +141,7 @@ bool FrontEnd::Update(const CloudData& cloud_data, Eigen::Matrix4f& cloud_pose) 
 }
 
 bool FrontEnd::Update(const CloudData& cloud_data, Eigen::Matrix4f& cloud_pose,const Eigen::Matrix4f& predict_gnsspose) {
+    static Eigen::Matrix4f last_gnsspose;
     current_frame_.cloud_data.time = cloud_data.time;
     std::vector<int> indices;
     pcl::removeNaNFromPointCloud(*cloud_data.cloud_ptr, *current_frame_.cloud_data.cloud_ptr, indices);
@@ -154,20 +155,22 @@ bool FrontEnd::Update(const CloudData& cloud_data, Eigen::Matrix4f& cloud_pose,c
     // static Eigen::Matrix4f predict_pose = predict_pose;
 
     //use   rtk as predict_pose
-    Eigen::Matrix4f predict_pose=init_gnss_pose_.inverse()*predict_gnsspose;
+    Eigen::Matrix4f predict_pose=init_gnss_pose_.inverse()*(current_frame_.pose*last_gnsspose.inverse()*predict_gnsspose);
     static Eigen::Matrix4f last_key_frame_pose = init_pose_;
+    static Eigen::Matrix4f last_frame_pose = init_pose_;
 
     // //use   rtk as predict_pose
     // Eigen::Matrix4f predict_pose=init_gnss_pose_.inverse()*predict_gnsspose;
     // static Eigen::Matrix4f last_key_frame_pose = init_pose_;
 
 
-    // 局部地图容器中没有关键帧，代表是第一帧数据
+    // 局部地图容器中没有关键帧，代表是第一帧数据,第一帧也一定就是关键帧数据
     // 此时把当前帧数据作为第一个关键帧，并更新局部地图容器和全局地图容器
     if (local_map_frames_.size() == 0) {
         current_frame_.pose = init_pose_;
         UpdateWithNewFrame(current_frame_);
         cloud_pose = current_frame_.pose;
+        last_gnsspose=current_frame_.pose;
         return true;
     }
 
@@ -189,6 +192,7 @@ bool FrontEnd::Update(const CloudData& cloud_data, Eigen::Matrix4f& cloud_pose,c
         last_key_frame_pose = current_frame_.pose;
     }
 
+    last_gnsspose=current_frame_.pose;
     return true;
 }
 

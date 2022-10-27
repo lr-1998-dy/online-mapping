@@ -14,7 +14,7 @@ frame_filter: voxel_filter # 选择当前帧点云滤波方法，目前支持：
 ## 滤波相关参数
 voxel_filter:
     global_map:
-            leaf_size: [0.5, 0.5, 0.5]
+        leaf_size: [0.5, 0.5, 0.5]
     local_map:
         leaf_size: [0.5, 0.5, 0.5]
     frame:

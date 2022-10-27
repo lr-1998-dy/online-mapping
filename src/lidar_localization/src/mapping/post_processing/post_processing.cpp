@@ -32,6 +32,7 @@ bool Post_Processing::InitWithConfig() {
     InitDataPath(config_node);
     InitFilter("map", map_filter_ptr_, config_node);
     InitFilter("global_map", map_without_ground_filter_ptr_, config_node);
+    InitFilter("global_map", post_map_without_ground_filter_ptr_, config_node);
     InitRasterization("global_map", map_rasterization_ptr_, config_node);
     return true;
 }
@@ -76,7 +77,13 @@ bool Post_Processing::InitFilter(std::string filter_user, std::shared_ptr<CloudF
         filter_ptr = std::make_shared<VoxelFilter>(config_node[filter_mothod][filter_user]);
         return true;
     } 
+
     if (filter_mothod == "ground_filter") {
+        filter_ptr = std::make_shared<GroundFilter>(config_node[filter_mothod]);
+        return true;
+    } 
+
+    if (filter_mothod == "post_ground_filter") {
         filter_ptr = std::make_shared<GroundFilter>(config_node[filter_mothod]);
         return true;
     } 
@@ -166,6 +173,7 @@ bool Post_Processing::SaveKeyCloud(int id,CloudData::CLOUD_PTR cloud_ptr) {
 bool Post_Processing::JointMap(const std::deque<KeyFrame>& optimized_odom_buff_,CloudData::CLOUD_PTR  &global_map_without_ground) 
 {
     global_map_without_ground.reset(new CloudData::CLOUD());
+    LOG(INFO)<<"optimized_odom_buff_.size():   "<<optimized_odom_buff_.size();
     for (int i = 0; i < optimized_odom_buff_.size(); i++)
     {
         Eigen::Matrix4f current_optimized_odom=optimized_odom_buff_.at(i).pose;
@@ -185,12 +193,14 @@ bool Post_Processing::SaveMap(const std::deque<KeyFrame>& optimized_odom_buff_){
     if (optimized_odom_buff_.size() == 0)
         return false;
     CloudData::CLOUD_PTR global_map_with_out_ground(new CloudData::CLOUD());
+    CloudData::CLOUD_PTR post_global_map_with_out_ground(new CloudData::CLOUD());
     JointMap(optimized_odom_buff_,global_map_with_out_ground);
-    std::string map_file_path=key_frames_path_+"/map/"+"global_map_with_out_ground.pcd";
-    pcl::io::savePCDFileBinary(map_file_path, *global_map_with_out_ground);
+    post_map_without_ground_filter_ptr_->Filter(global_map_with_out_ground,post_global_map_with_out_ground);
+    std::string map_file_path=key_frames_path_+"/map/"+"post_global_map_with_out_ground.pcd";
+    pcl::io::savePCDFileBinary(map_file_path, *post_global_map_with_out_ground);
     LOG(INFO)<<"去除地面点的地图保存为："<<map_file_path;
     //创建栅格地图并且存储
-    map_rasterization_ptr_->CreateGridMap(global_map_with_out_ground);
+    map_rasterization_ptr_->CreateGridMap(post_global_map_with_out_ground);
     inflated_gridmap_=map_rasterization_ptr_->GetGridMap();
     return true;
 }

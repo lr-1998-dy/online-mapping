@@ -6,7 +6,7 @@
 map:
   ori_longitude_: 118.1789369
   ori_latitude_: 31.1367846
-  ori_altitude_: 15.866
+  ori_altitude_: 95
 
 lidar2imu_: [ 1, 0, 0,0,
                          0, 1,0,0, 
