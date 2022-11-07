@@ -5,6 +5,7 @@ key_frame_distance: 7.0 # 关键帧距离
 
 # 优化
 graph_optimizer_type: g2o # 图优化库，目前支持g2o
+map_assess_type: TrajectoryAssess
 
 use_gnss: true
 use_loop_close: true
@@ -17,3 +18,7 @@ g2o_param:
     odom_edge_noise: [0.5, 0.5, 0.5, 0.001, 0.001, 0.001] # 噪声：x y z yaw roll pitch
     close_loop_noise: [0.3, 0.3, 0.3, 0.001, 0.001, 0.001] # 噪声：x y z yaw roll pitch
     gnss_noise: [2.0, 2.0, 2.0] # 噪声：x y z
+
+#地图质量评价
+TrajectoryAssess: 
+    coincidence_degree: 0.5

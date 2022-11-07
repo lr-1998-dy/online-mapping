@@ -1,6 +1,6 @@
 /*
  * @Author: Li Rui
- * @LastEditTime: 2022-10-27 14:24:17
+ * @LastEditTime: 2022-11-03 15:11:54
  * @LastEditors: lr 2012227985@qq.com
  * @Description: 获得被优化之后的位姿信息，后处理点云，存储点云，生成全局地图
  */
@@ -36,10 +36,13 @@ class Post_Processing {
     bool HasNewGlobalMap();
     nav_msgs::OccupancyGrid CreateGridMap();
     nav_msgs::OccupancyGrid GetGridMap();
+    CloudData::CLOUD_PTR GetGlobalMap();
+
 
   private:
     bool InitWithConfig();
     bool InitParam(const YAML::Node& config_node);
+    std::string GetDate();
     bool InitDataPath(const YAML::Node& config_node);
     bool InitFilter(std::string filter_user, std::shared_ptr<CloudFilterInterface>& filter_ptr, const YAML::Node& config_node);
     bool InitRasterization(std::string rasterization_user, std::shared_ptr<RasterizationInterface>& filter_ptr, const YAML::Node& config_node);
@@ -48,6 +51,7 @@ class Post_Processing {
 
   private:
     std::string key_frames_path_ = "";
+    std::string map_path_ = "";
 
     std::shared_ptr<CloudFilterInterface> map_filter_ptr_;
     std::shared_ptr<CloudFilterInterface> map_without_ground_filter_ptr_;
@@ -63,6 +67,7 @@ class Post_Processing {
 
     std::shared_ptr<RasterizationInterface> map_rasterization_ptr_;
     nav_msgs::OccupancyGrid inflated_gridmap_;
+    CloudData::CLOUD_PTR global_map_with_out_ground_;
 };
 }
 

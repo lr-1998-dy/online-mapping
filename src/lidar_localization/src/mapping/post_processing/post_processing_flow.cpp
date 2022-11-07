@@ -14,6 +14,7 @@ PostProcessingFlow::PostProcessingFlow(ros::NodeHandle& nh) {
     key_frame_sub_ptr_= std::make_shared<KeyFrameSubscriber>(nh, "/key_frame", 100000);
     // publisher
     map_without_ground_pub_ptr_ = std::make_shared<CloudPublisher>(nh, "/map_without_ground", "/map", 100);
+    gridmap_without_ground_pub_ptr_=std::make_shared<GridMapPublisher>(nh, "/gridmap_without_ground", "/map", 100);
     post_processing_ptr_=std::make_shared<Post_Processing>();
 }
 
@@ -67,12 +68,23 @@ bool PostProcessingFlow::SaveMap(){
     return true;
 }
 
-bool PostProcessingFlow::GetGridMap(){
-    inflated_gridmap_=post_processing_ptr_->GetGridMap();
-    return true;
-}
+// bool PostProcessingFlow::GetGridMap(){
+//     inflated_gridmap_=post_processing_ptr_->GetGridMap();
+//     return true;
+// }
+
+// bool PostProcessingFlow::GetGlobalMap(){
+//     pcl::copyPointCloud(*post_processing_ptr_->GetGlobalMap(),*global_map_with_out_ground_);
+//     return true;
+// }
 
 bool PostProcessingFlow::PublishData() {
+    nav_msgs::OccupancyGrid inflated_gridmap;
+    inflated_gridmap=post_processing_ptr_->GetGridMap();
+    gridmap_without_ground_pub_ptr_->Publish(inflated_gridmap);
+    CloudData::CLOUD_PTR global_map_with_out_ground(new CloudData::CLOUD());
+    pcl::copyPointCloud(*post_processing_ptr_->GetGlobalMap(),*global_map_with_out_ground);
+    map_without_ground_pub_ptr_->Publish(global_map_with_out_ground);
     return true;
 }
 }

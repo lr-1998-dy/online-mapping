@@ -11,6 +11,8 @@
 
 #include "lidar_localization/global_defination/global_defination.h"
 #include "lidar_localization/tools/file_manager.hpp"
+#include "lidar_localization/models/assess/trajectory_assess.hpp"
+
 
 namespace lidar_localization {
 BackEnd::BackEnd() {
@@ -25,6 +27,7 @@ bool BackEnd::InitWithConfig() {
     InitParam(config_node);
     InitGraphOptimizer(config_node);
     InitDataPath(config_node);
+    InitMapAssess(config_node);
 
     return true;
 }
@@ -93,6 +96,19 @@ bool BackEnd::InitDataPath(const YAML::Node& config_node) {
     return true;
 }
 
+bool BackEnd::InitMapAssess(const YAML::Node& config_node) {
+    std::string map_assess_type = config_node["map_assess_type"].as<std::string>();
+    if (map_assess_type == "TrajectoryAssess") {
+        map_assess_ptr_ = std::make_shared<TrajectoryAssess>(config_node[map_assess_type]);
+    } else {
+        LOG(ERROR) << "没有找到与 " << map_assess_type << " 对应的地图评价模式,请检查配置文件";
+        return false;
+    }
+    std::cout << "地图质量评价模式为：" << map_assess_type << std::endl << std::endl;
+
+    return true;
+}
+
 //lr:判断是否是关键帧，并且将数据填入到g2o优化之中，进行优化
 bool BackEnd::Update(const CloudData& cloud_data, const PoseData& laser_odom, const PoseData& gnss_pose) {
     ResetParam();
@@ -100,6 +116,7 @@ bool BackEnd::Update(const CloudData& cloud_data, const PoseData& laser_odom, co
     //如果是关键帧的话，就把点云和位姿都存储起来
     if (MaybeNewKeyFrame(cloud_data, laser_odom, gnss_pose)) {
         SavePose(ground_truth_ofs_, gnss_pose.pose);
+        gnss_pose_.push_back(gnss_pose.pose);
         SavePose(laser_odom_ofs_, laser_odom.pose);
         AddNodeAndEdge(gnss_pose);
         
@@ -248,6 +265,12 @@ bool BackEnd::SaveOptimizedPose() {
         return false;
 
     graph_optimizer_ptr_->GetOptimizedPose(optimized_pose_);
+
+    if (map_assess_ptr_->Assess(optimized_pose_,gnss_pose_)==false)
+    {
+        LOG(ERROR) << "建图质量评价不合格 ，请重新录制";
+        return false;
+    }
 
     for (size_t i = 0; i < optimized_pose_.size(); ++i) {
         SavePose(optimized_pose_ofs_, optimized_pose_.at(i));

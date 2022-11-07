@@ -33,12 +33,15 @@ class ViewerFlow {
     bool ValidData();
     bool PublishGlobalData();
     bool PublishLocalData();
+    bool SetToOrigin(CloudData::CLOUD_PTR cloud_ptr);
+
 
   private:
     // subscriber
     std::shared_ptr<CloudSubscriber> cloud_sub_ptr_;
     std::shared_ptr<OdometrySubscriber> transformed_odom_sub_ptr_;
     std::shared_ptr<KeyFrameSubscriber> key_frame_sub_ptr_;
+    std::shared_ptr<KeyFrameSubscriber> map_origin_sub_ptr_;
     std::shared_ptr<KeyFramesSubscriber> optimized_key_frames_sub_ptr_;
     // publisher
     std::shared_ptr<OdometryPublisher> optimized_odom_pub_ptr_;
@@ -53,6 +56,7 @@ class ViewerFlow {
     std::deque<KeyFrame> key_frame_buff_;
     std::deque<KeyFrame> optimized_key_frames_;
     std::deque<KeyFrame> all_key_frames_;
+    std::deque<KeyFrame> map_origin_;
 
     CloudData current_cloud_data_;
     PoseData current_transformed_odom_;

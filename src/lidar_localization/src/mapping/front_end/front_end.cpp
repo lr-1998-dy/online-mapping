@@ -1,4 +1,12 @@
 /*
+ * @Author: lr 2012227985@qq.com
+ * @Date: 2022-10-20 15:13:37
+ * @LastEditors: lr 2012227985@qq.com
+ * @LastEditTime: 2022-11-03 22:35:49
+ * @FilePath: /src/lidar_localization/src/mapping/front_end/front_end.cpp
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
+/*
  * @Description: 前端里程计算法
  * @Author: Li Rui
  * @Date: 2022-02-04 18:53:06
@@ -140,6 +148,13 @@ bool FrontEnd::Update(const CloudData& cloud_data, Eigen::Matrix4f& cloud_pose) 
     return true;
 }
 
+/**
+ * @description: 在世界坐标系下做匹配
+ * @param {CloudData&} cloud_data
+ * @param {Matrix4f&} cloud_pose
+ * @param {Matrix4f&} predict_gnsspose
+ * @return {*}
+ */
 bool FrontEnd::Update(const CloudData& cloud_data, Eigen::Matrix4f& cloud_pose,const Eigen::Matrix4f& predict_gnsspose) {
     static Eigen::Matrix4f last_gnsspose;
     current_frame_.cloud_data.time = cloud_data.time;

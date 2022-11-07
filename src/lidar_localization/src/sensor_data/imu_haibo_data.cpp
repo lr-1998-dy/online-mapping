@@ -9,6 +9,7 @@
 
 bool lidar_localization::IMUHaiboData::origin_position_inited = false;
 GeographicLib::LocalCartesian lidar_localization::IMUHaiboData::geo_converter;
+int lidar_localization::IMUHaiboData::sensor_check = 0;
 
 namespace lidar_localization {
 void IMUHaiboData::InitOriginPosition(double latitude,double longitude,double altitude) {
@@ -65,8 +66,14 @@ bool IMUHaiboData::SyncData(std::deque<IMUHaiboData>& UnsyncedData, std::deque<I
         }
         break;
     }
-    if (UnsyncedData.size() < 2)
+
+    if (UnsyncedData.size() < 2){
+        if (sensor_check++>40)
+        {
+            LOG(WARNING)<<"传感器丢帧情况严重，请检查传感器"<<sensor_check;
+        }
         return false;
+    }
 
     IMUHaiboData front_data = UnsyncedData.at(0);
     IMUHaiboData back_data = UnsyncedData.at(1);

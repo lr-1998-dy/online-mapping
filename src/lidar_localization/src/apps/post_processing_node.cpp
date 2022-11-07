@@ -40,6 +40,7 @@ int main(int argc, char *argv[]) {
 
         if (_need_post_map) {
             _post_processing_flow_ptr->SaveMap();
+            _post_processing_flow_ptr->PublishData();
             _need_post_map = false;
         }
 

@@ -12,6 +12,7 @@ ViewerFlow::ViewerFlow(ros::NodeHandle& nh) {
     // subscriber
     cloud_sub_ptr_ = std::make_shared<CloudSubscriber>(nh, "/synced_cloud", 100000);
     key_frame_sub_ptr_ = std::make_shared<KeyFrameSubscriber>(nh, "/key_frame", 100000);
+    map_origin_sub_ptr_ = std::make_shared<KeyFrameSubscriber>(nh, "/map_origin", 100000);
     transformed_odom_sub_ptr_ = std::make_shared<OdometrySubscriber>(nh, "/transformed_odom", 100000);
     optimized_key_frames_sub_ptr_ = std::make_shared<KeyFramesSubscriber>(nh, "/optimized_key_frames", 100000);
     // publisher
@@ -46,6 +47,7 @@ bool ViewerFlow::ReadData() {
     cloud_sub_ptr_->ParseData(cloud_data_buff_);
     transformed_odom_sub_ptr_->ParseData(transformed_odom_buff_);
     key_frame_sub_ptr_->ParseData(key_frame_buff_);
+    map_origin_sub_ptr_->ParseData(map_origin_);
     optimized_key_frames_sub_ptr_->ParseData(optimized_key_frames_);
 
     return true;
@@ -103,6 +105,11 @@ bool ViewerFlow::PublishLocalData() {
     }
 
     return true;
+}
+
+bool ViewerFlow::SetToOrigin(CloudData::CLOUD_PTR cloud_ptr) {
+    CloudData::CLOUD_PTR cloud_tmp_ptr(new CloudData::CLOUD());
+    pcl::copyPointCloud(*cloud_ptr,*cloud_tmp_ptr);
 }
 
 bool ViewerFlow::SaveMap() {

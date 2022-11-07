@@ -51,6 +51,7 @@ class IMUHaiboData {
   private:
   static GeographicLib::LocalCartesian geo_converter;
   static bool origin_position_inited;
+  static int sensor_check;
 
   public:
     void InitOriginPosition(double latitude,double longitude,double altitude);

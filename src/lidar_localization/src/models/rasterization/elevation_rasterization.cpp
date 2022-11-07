@@ -9,7 +9,7 @@
 
 namespace lidar_localization {
 
-ElevationRasterization::ElevationRasterization(const YAML::Node& node,const std::string &key_frames_path_){
+ElevationRasterization::ElevationRasterization(const YAML::Node& node,const std::string &map_path){
     
     int count_threshold = node["count_threshold"].as<int>();
     float height_threshold = node["height_threshold"].as<float>();
@@ -17,7 +17,7 @@ ElevationRasterization::ElevationRasterization(const YAML::Node& node,const std:
     int inflation_map_y = node["inflation_map_y"].as<int>();
     float map_resolution=node["map_resolution"].as<float>();
 
-    json_path_=key_frames_path_+"/map/global_map.json";
+    json_path_=map_path+"/global_map.json";
 
     SetRasterizationParam(count_threshold, height_threshold, inflation_map_x, inflation_map_y,map_resolution);
 }
@@ -52,23 +52,17 @@ bool ElevationRasterization::SetRasterizationParam(int count_threshold,float hei
  * @return {*}
  */
 bool ElevationRasterization::CreateGridMap(const CloudData::CLOUD_PTR& cloud_map) {
-      LOG(INFO)<<"ElevationRasterization::CreateGridMap";
     if (cloud_map->points.empty())
     {
         LOG(WARNING)<<"点云地图为空，不能构建栅格地图";
         return false;
     }
-    LOG(INFO)<<"ElevationRasterization::CreateGridMap";
     nav_msgs::OccupancyGrid gridmap;
-    LOG(INFO)<<"ElevationRasterization::CreateGridMap";
     CreateInitialMap(cloud_map,gridmap);
-    LOG(INFO)<<"ElevationRasterization::CreateGridMap";
     Erode_Dilate(gridmap);
-    LOG(INFO)<<"ElevationRasterization::CreateGridMap";
     InflateGradMap(gridmap,inflated_gridmap_);
-    LOG(INFO)<<"ElevationRasterization::CreateGridMap";
-    WriteToJson(inflated_gridmap_);
-    LOG(INFO)<<"ElevationRasterization::CreateGridMap";
+    // WriteToJson(inflated_gridmap_);
+    WriteToNewJson(inflated_gridmap_);
 
     return true;
 }
@@ -258,6 +252,42 @@ bool ElevationRasterization::WriteToJson(const nav_msgs::OccupancyGrid &inflated
     for (int i = 0; i < (inflated_gridmap.info.width * inflated_gridmap.info.height); i++)
     {
         root["data"].append(inflated_gridmap.data[i]);
+        // root["data"].append(0);
+    }
+    root["header.frame_id"] = Json::Value("map");
+    //时间戳写入
+    // ros::Time json_map_time=inflated_gridmap.info.map_load_time;
+    root["header.stamp"] = Json::Value(ros::Time::now().toSec());
+    root["origin.x"] = Json::Value(inflated_gridmap.info.origin.position.x);
+    root["origin.y"] = Json::Value(inflated_gridmap.info.origin.position.y);
+    root["origin.z"] = Json::Value(0.0);
+    root["origin.heading"] = Json::Value(0.0);
+    root["width"] = Json::Value(inflated_gridmap.info.width);
+    root["height"] = Json::Value(inflated_gridmap.info.height);
+    root["length"] = Json::Value(20.0);
+    root["resolution"] = Json::Value(1.0);
+
+    Json::StyledWriter sw;
+    std::ofstream os;
+    os.open(json_path_, std::ios::out);
+    if (!os.is_open())
+        std::cout << "error:can not find or create the file which named \" demo.json\"." << std::endl;
+    os << sw.write(root);
+    os.close();
+    LOG(INFO)<<"created json file !!!! \n";
+
+    return true;
+}
+
+bool ElevationRasterization::WriteToNewJson(const nav_msgs::OccupancyGrid &inflated_gridmap){
+    Json::Value root;
+
+    for (int i = 0; i < (inflated_gridmap.info.width * inflated_gridmap.info.height); i++)
+    {
+        if (inflated_gridmap.data[i]!=0)
+        {
+            root["data"].append(i);
+        }
         // root["data"].append(0);
     }
     root["header.frame_id"] = Json::Value("map");
