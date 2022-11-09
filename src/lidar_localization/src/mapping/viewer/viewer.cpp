@@ -11,6 +11,10 @@
 
 #include "lidar_localization/tools/file_manager.hpp"
 #include "lidar_localization/global_defination/global_defination.h"
+#include"lidar_localization/models/rasterization/elevation_rasterization.hpp"
+
+#define SAVE_MAP 1
+#define SAVE_POST_MAP 0
 
 namespace lidar_localization {
 Viewer::Viewer() {
@@ -27,6 +31,7 @@ bool Viewer::InitWithConfig() {
     InitFilter("frame", frame_filter_ptr_, config_node);
     InitFilter("local_map", local_map_filter_ptr_, config_node);
     InitFilter("global_map", global_map_filter_ptr_, config_node);
+    InitRasterization("global_map", map_rasterization_ptr_, config_node);
 
     return true;
 }
@@ -43,6 +48,7 @@ bool Viewer::InitDataPath(const YAML::Node& config_node) {
     }
 
     key_frames_path_ = data_path + "/slam_data/key_frames";
+    post_key_frames_path_=data_path + "/slam_data/post_key_frames";
     map_path_ = data_path + "/slam_data/map";
 
     while (!(FileManager::IsDirectory(data_path+"/slam_data")))
@@ -68,6 +74,20 @@ bool Viewer::InitFilter(std::string filter_user, std::shared_ptr<CloudFilterInte
     }
 
     return true;
+}
+
+bool Viewer::InitRasterization(std::string rasterization_user, std::shared_ptr<RasterizationInterface>& filter_ptr, const YAML::Node& config_node){
+    std::string rasterization_mothod = config_node[rasterization_user + "_rasterization"].as<std::string>();
+    std::cout << "栅格化" << rasterization_user << "选择的栅格方法为：" << rasterization_mothod << std::endl;
+
+    if (rasterization_mothod=="elevation_rasterization")
+    {
+        map_rasterization_ptr_=std::make_shared<ElevationRasterization>(config_node[rasterization_mothod],map_path_);
+        return true;
+    }
+
+    LOG(ERROR) << "没有为 " << rasterization_user << " 找到与 " << rasterization_mothod << " 相对应的栅格化方法!";
+    return false;
 }
 
 bool Viewer::UpdateWithOptimizedKeyFrames(std::deque<KeyFrame>& optimized_key_frames) {
@@ -133,7 +153,7 @@ bool Viewer::OptimizeKeyFrames() {
 }
 
 bool Viewer::JointGlobalMap(CloudData::CLOUD_PTR& global_map_ptr) {
-    JointCloudMap(optimized_key_frames_, global_map_ptr);
+    JointCloudMap(optimized_key_frames_, global_map_ptr,SAVE_POST_MAP);
     return true;
 }
 
@@ -147,18 +167,23 @@ bool Viewer::JointLocalMap(CloudData::CLOUD_PTR& local_map_ptr) {
         local_key_frames.push_back(all_key_frames_.at(i));
     }
 
-    JointCloudMap(local_key_frames, local_map_ptr);
+    JointCloudMap(local_key_frames, local_map_ptr,SAVE_MAP);
     return true;
 }
 
-bool Viewer::JointCloudMap(const std::deque<KeyFrame>& key_frames, CloudData::CLOUD_PTR& map_cloud_ptr) {
+bool Viewer::JointCloudMap(const std::deque<KeyFrame>& key_frames, CloudData::CLOUD_PTR& map_cloud_ptr, int save_map) {
     map_cloud_ptr.reset(new CloudData::CLOUD());
 
     CloudData::CLOUD_PTR cloud_ptr(new CloudData::CLOUD());
     std::string file_path = "";
 
     for (size_t i = 0; i < key_frames.size(); ++i) {
-        file_path = key_frames_path_ + "/key_frame_" + std::to_string(key_frames.at(i).index) + ".pcd";
+        if (save_map==1)
+        {
+            file_path = key_frames_path_ + "/key_frame_" + std::to_string(key_frames.at(i).index) + ".pcd";
+        }else{
+            file_path = post_key_frames_path_ + "/post_key_frame_" + std::to_string(key_frames.at(i).index) + ".pcd";
+        }
         pcl::io::loadPCDFile(file_path, *cloud_ptr);
         pcl::transformPointCloud(*cloud_ptr, *cloud_ptr, key_frames.at(i).pose);
         *map_cloud_ptr += *cloud_ptr;
@@ -172,12 +197,22 @@ bool Viewer::SaveMap() {
         return false;
 
     CloudData::CLOUD_PTR global_map_ptr(new CloudData::CLOUD());
-    JointCloudMap(optimized_key_frames_, global_map_ptr);
+    JointCloudMap(optimized_key_frames_, global_map_ptr,SAVE_MAP);
+    global_map_filter_ptr_->Filter(global_map_ptr, global_map_ptr);
 
     std::string map_file_path = map_path_ + "/map.pcd";
     pcl::io::savePCDFileBinary(map_file_path, *global_map_ptr);
 
     LOG(INFO) << "地图保存完成，地址是：" << std::endl << map_file_path << std::endl << std::endl;
+
+    CloudData::CLOUD_PTR global_map_without_ground_ptr(new CloudData::CLOUD());
+    JointCloudMap(optimized_key_frames_, global_map_without_ground_ptr,SAVE_POST_MAP);
+    global_map_filter_ptr_->Filter(global_map_without_ground_ptr, global_map_without_ground_ptr);
+
+    std::string map_without_ground_file_path = map_path_ + "/post_map.pcd";
+    pcl::io::savePCDFileBinary(map_without_ground_file_path, *global_map_without_ground_ptr);
+
+    LOG(INFO) << "无地面的地图保存完成，地址是：" << std::endl << map_without_ground_file_path << std::endl << std::endl;
 
     return true;
 }
@@ -197,9 +232,11 @@ bool Viewer::GetLocalMap(CloudData::CLOUD_PTR& local_map_ptr) {
     return true;
 }
 
-bool Viewer::GetGlobalMap(CloudData::CLOUD_PTR& global_map_ptr) {
+bool Viewer::GetGlobalMap(CloudData::CLOUD_PTR& global_map_ptr,nav_msgs::OccupancyGrid& inflated_gridmap) {
     JointGlobalMap(global_map_ptr);
     global_map_filter_ptr_->Filter(global_map_ptr, global_map_ptr);
+    map_rasterization_ptr_->CreateGridMap(global_map_ptr);
+    inflated_gridmap=map_rasterization_ptr_->GetGridMap();
     return true;
 }
 

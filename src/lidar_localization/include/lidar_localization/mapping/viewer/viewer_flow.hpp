@@ -16,6 +16,7 @@
 // publisher
 #include "lidar_localization/publisher/odometry_publisher.hpp"
 #include "lidar_localization/publisher/cloud_publisher.hpp"
+#include "lidar_localization/publisher/gridmap_publisher.hpp"
 // viewer
 #include "lidar_localization/mapping/viewer/viewer.hpp"
 
@@ -26,14 +27,15 @@ class ViewerFlow {
 
     bool Run();
     bool SaveMap();
+    bool PublishGlobalData();
 
   private:
     bool ReadData();
     bool HasData();
     bool ValidData();
-    bool PublishGlobalData();
     bool PublishLocalData();
-    bool SetToOrigin(CloudData::CLOUD_PTR cloud_ptr);
+    CloudData::CLOUD_PTR& SetToOrigin( CloudData::CLOUD_PTR& cloud_ptr);
+    bool SetToOrigin(nav_msgs::OccupancyGrid& inflated_gridmap);
 
 
   private:
@@ -48,6 +50,7 @@ class ViewerFlow {
     std::shared_ptr<CloudPublisher> current_scan_pub_ptr_;
     std::shared_ptr<CloudPublisher> global_map_pub_ptr_;
     std::shared_ptr<CloudPublisher> local_map_pub_ptr_;
+    std::shared_ptr<GridMapPublisher> gridmap_without_ground_pub_ptr_;
     // viewer
     std::shared_ptr<Viewer> viewer_ptr_;
 
@@ -56,7 +59,8 @@ class ViewerFlow {
     std::deque<KeyFrame> key_frame_buff_;
     std::deque<KeyFrame> optimized_key_frames_;
     std::deque<KeyFrame> all_key_frames_;
-    std::deque<KeyFrame> map_origin_;
+    std::deque<KeyFrame> map_origin_buff_;
+    KeyFrame map_origin_;
 
     CloudData current_cloud_data_;
     PoseData current_transformed_odom_;

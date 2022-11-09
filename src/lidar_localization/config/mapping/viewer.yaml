@@ -1,5 +1,6 @@
 data_path: ./   # 数据存放路径
 
+#滤波参数
 # 全局地图
 global_map_filter: voxel_filter # 选择全局地图点云滤波方法，目前支持：voxel_filter
 
@@ -10,6 +11,9 @@ local_map_filter: voxel_filter # 选择滑窗小地图点云滤波方法，目�
 # 当前帧
 frame_filter: voxel_filter # 选择当前帧点云滤波方法，目前支持：voxel_filter
 
+#生成栅格地图
+global_map_rasterization: elevation_rasterization
+
 # 各配置选项对应参数
 ## 滤波相关参数
 voxel_filter:
@@ -19,3 +23,12 @@ voxel_filter:
         leaf_size: [0.5, 0.5, 0.5]
     frame:
         leaf_size: [0.5, 0.5, 0.5]
+
+#生成栅格的相关参数
+elevation_rasterization:
+    count_threshold : 7
+    height_threshold : 0.4
+    inflation_map_x : 150
+    inflation_map_y : 150
+    map_resolution: 1
+
