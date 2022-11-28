@@ -2,7 +2,7 @@
  * @Author: lr 2012227985@qq.com
  * @Date: 2022-10-20 15:13:37
  * @LastEditors: lr 2012227985@qq.com
- * @LastEditTime: 2022-11-03 22:35:49
+ * @LastEditTime: 2022-11-28 19:56:37
  * @FilePath: /src/lidar_localization/src/mapping/front_end/front_end.cpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -24,6 +24,7 @@
 #include "lidar_localization/models/registration/ndt_registration.hpp"
 #include "lidar_localization/models/registration/ndt_omp_registration.hpp"
 #include "lidar_localization/models/registration/ndt_irls_registration.hpp"
+#include "lidar_localization/models/registration/icp_registration.hpp"
 #include "lidar_localization/models/cloud_filter/voxel_filter.hpp"
 #include "lidar_localization/models/cloud_filter/no_filter.hpp"
 
@@ -81,6 +82,9 @@ bool FrontEnd::InitRegistration(std::shared_ptr<RegistrationInterface>& registra
         return true;
     } 
 
+    if (registration_method == "ICP") {
+        registration_ptr = std::make_shared<ICPRegistration>(config_node[registration_method]);
+    } 
 
     LOG(ERROR) << "没找到与 " << registration_method << " 相对应的点云匹配方式!";
     return false;

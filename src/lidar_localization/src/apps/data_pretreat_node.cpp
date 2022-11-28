@@ -6,10 +6,20 @@
 #include <ros/ros.h>
 #include "glog/logging.h"
 
+#include <lidar_localization/stopMapping.h>
 #include "lidar_localization/global_defination/global_defination.h"
 #include "lidar_localization/data_pretreat/data_pretreat_flow.hpp"
 
 using namespace lidar_localization;
+
+bool _need_stop_map = false;
+
+bool stop_map_callback(stopMapping::Request &request, stopMapping::Response &response) {
+    _need_stop_map = true;
+    response.succeed = true;
+    return response.succeed;
+}
+
 
 int main(int argc, char *argv[]) {
     google::InitGoogleLogging(argv[0]);
@@ -19,6 +29,7 @@ int main(int argc, char *argv[]) {
     ros::init(argc, argv, "data_pretreat_node");
     ros::NodeHandle nh;
 
+    ros::ServiceServer service = nh.advertiseService("stop_mapping", stop_map_callback);
     std::shared_ptr<DataPretreatFlow> data_pretreat_flow_ptr = std::make_shared<DataPretreatFlow>(nh);
 
     ros::Rate rate(100);
@@ -26,6 +37,9 @@ int main(int argc, char *argv[]) {
         ros::spinOnce();
 
         data_pretreat_flow_ptr->Run();
+        if(_need_stop_map==true){
+            break;
+        }
 
         rate.sleep();
     }

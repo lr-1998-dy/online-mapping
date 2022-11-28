@@ -4,7 +4,6 @@
 
 #include "neighbor_finder.h"
 #include "rigid_estimator.h"
-#include <yaml-cpp/yaml.h>
 
 template <typename T>
 using EigenVector = std::vector<T, Eigen::aligned_allocator<T>>;
@@ -17,7 +16,7 @@ struct NDTLocParam {
     int max_irls = 10;
     int search_neighbor_num = 1;  // 7 or 1
     double ndt_resolution = 1.0;
-    double transformation_epsilon = 0.001;
+    double transformation_epsilon = 0.01;
     double outlier_ratio = 0.55;
     double min_score = 0.50;
 };
@@ -50,21 +49,7 @@ class NDTScanMatcher {
     static Ptr create(const NDTLocParam& param) {
         return std::unique_ptr<NDTScanMatcher>(new NDTScanMatcher(param));
     }
-
-    static Ptr create(const YAML::Node& node) {
-      NDTLocParam param;
-      param.max_irls=node["max_irls"].as<int>();
-      param.max_iterations=node["max_iterations"].as<int>();
-      param.min_neighbor_num=node["min_neighbor_num"].as<int>();
-      param.min_score=node["min_score"].as<double>();
-      param.ndt_resolution=node["ndt_resolution"].as<double>();
-      param.outlier_ratio=node["outlier_ratio"].as<double>();
-      param.search_neighbor_num=node["search_neighbor_num"].as<int>();
-      param.transformation_epsilon=node["transformation_epsilon"].as<double>();
-      return std::unique_ptr<NDTScanMatcher>(new NDTScanMatcher(param));
-    }
-
-    /** 
+    /**
      * @brief destructor
      */
     virtual ~NDTScanMatcher() {}

@@ -26,6 +26,7 @@ add_service_files(
    saveMap.srv
    optimizeMap.srv
    savePostMap.srv
+   stopMapping.srv
 )
 
 generate_messages(
@@ -58,9 +59,8 @@ add_executable(test_frame_node src/apps/test_frame_node.cpp ${ALL_SRCS})
 target_link_libraries(test_frame_node ${catkin_LIBRARIES} ${ALL_TARGET_LIBRARIES})
 
 add_executable(data_pretreat_node src/apps/data_pretreat_node.cpp ${ALL_SRCS})
-add_dependencies(data_pretreat_node ${catkin_EXPORTED_TARGETS})
+add_dependencies(data_pretreat_node ${catkin_EXPORTED_TARGETS} stopMapping_gencpp)
 target_link_libraries(data_pretreat_node ${catkin_LIBRARIES} ${ALL_TARGET_LIBRARIES})
-
 
 add_executable(front_end_node src/apps/front_end_node.cpp ${ALL_SRCS})
 add_dependencies(front_end_node ${catkin_EXPORTED_TARGETS})

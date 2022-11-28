@@ -40,6 +40,7 @@ class Viewer {
   private:
     bool InitWithConfig();
     bool InitParam(const YAML::Node& config_node);
+    std::string GetDate();
     bool InitDataPath(const YAML::Node& config_node);
     bool InitFilter(std::string filter_user, 
                     std::shared_ptr<CloudFilterInterface>& filter_ptr, 

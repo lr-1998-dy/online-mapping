@@ -8,6 +8,7 @@
 #include <pcl/common/transforms.h>
 #include <pcl/io/pcd_io.h>
 #include "glog/logging.h"
+#include <unistd.h>
 
 #include "lidar_localization/tools/file_manager.hpp"
 #include "lidar_localization/global_defination/global_defination.h"
@@ -41,15 +42,45 @@ bool Viewer::InitParam(const YAML::Node& config_node) {
     return true;
 }
 
+std::string Viewer::GetDate(){
+    std::string date;
+    time_t now = time(0);
+    
+    tm *ltm = localtime(&now);
+
+    //补零位
+	std::stringstream fillmonzero;
+	fillmonzero << std::setw(2) << std::setfill('0') << (1 + ltm->tm_mon) ;
+	std::string mon;
+	fillmonzero >> mon;     
+
+	std::stringstream filldayzero;
+    filldayzero << std::setw(2) << std::setfill('0') << (ltm->tm_mday) ;
+	std::string day;
+	filldayzero >> day;     
+
+    // 输出 tm 结构的各个组成部分
+    date=std::to_string(1900 + ltm->tm_year)+mon+day;
+    return date;
+}
+
+
 bool Viewer::InitDataPath(const YAML::Node& config_node) {
     std::string data_path = config_node["data_path"].as<std::string>();
+    std::string map_path = config_node["map_path"].as<std::string>();
     if (data_path == "./") {
         data_path = WORK_SPACE_PATH;
     }
 
     key_frames_path_ = data_path + "/slam_data/key_frames";
     post_key_frames_path_=data_path + "/slam_data/post_key_frames";
-    map_path_ = data_path + "/slam_data/map";
+
+    if (map_path == "./") {
+        map_path_ = data_path + "/slam_data/map";
+    }else{
+        map_path_=map_path+"/"+GetDate();
+    }
+
 
     while (!(FileManager::IsDirectory(data_path+"/slam_data")))
     {

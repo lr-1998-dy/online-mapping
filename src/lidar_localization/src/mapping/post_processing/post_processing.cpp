@@ -152,7 +152,7 @@ bool Post_Processing::Update(std::deque<KeyFrame>  key_frame_buff_) {
 
     for (int i = last_id; i <= key_frame_buff_.back().index; i++)
     {
-        SaveKeyCloud(key_frame_buff_[i].index,cloud_ptr);
+        SaveKeyCloud(i,cloud_ptr);
     }
     last_id=key_frame_buff_.back().index;
 

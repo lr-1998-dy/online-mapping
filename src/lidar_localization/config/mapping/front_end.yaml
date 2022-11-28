@@ -1,7 +1,8 @@
 # 匹配
 # registration_method: NDT   # 选择点云匹配方法，目前支持：NDT 
-registration_method: NDT-OMP   # 选择点云匹配方法，目前支持：NDT-OMP
+# registration_method: NDT-OMP   # 选择点云匹配方法，目前支持：NDT-OMP
 # registration_method: NDT-IRLS   # 选择点云匹配方法，目前支持：NDT-OMP
+registration_method: ICP
 
 prior_information: GNSS   # 选择点云匹配先验信息，目前支持：GNSS 
 # prior_information: Predict   # 选择点云匹配先验信息，目前支持：GNSS 
@@ -45,6 +46,12 @@ NDT-IRLS:
     transformation_epsilon : 0.001
     outlier_ratio :  0.55
     min_score : 0.50
+
+ICP:
+    max_corr_dist : 1.2
+    trans_eps : 0.01
+    euc_fitness_eps : 0.36
+    max_iter : 100
 
 ## 滤波相关参数
 voxel_filter:
