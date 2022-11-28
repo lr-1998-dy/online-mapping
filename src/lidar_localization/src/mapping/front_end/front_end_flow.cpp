@@ -105,7 +105,6 @@ bool FrontEndFlow::UpdateLaserOdometry() {
         }
         else
             return front_end_ptr_->Update(current_cloud_data_, laser_odometry_);
-        
     }
     
     if (Prior_information_==1)

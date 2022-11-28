@@ -12,4 +12,5 @@ Eigen::Quaternionf PoseData::GetQuaternion() {
 
     return q;
 }
+
 }

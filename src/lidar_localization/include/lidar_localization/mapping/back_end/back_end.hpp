@@ -1,7 +1,7 @@
 /*
  * @Author: Li Rui
- * @LastEditTime: 2022-09-07 20:47:06
- * @LastEditors: Li Rui
+ * @LastEditTime: 2022-11-03 11:21:12
+ * @LastEditors: lr 2012227985@qq.com
  * @Description: 后端的执行代码，
  */
 
@@ -19,6 +19,7 @@
 #include "lidar_localization/sensor_data/loop_pose.hpp"
 
 #include "lidar_localization/models/graph_optimizer/g2o/g2o_graph_optimizer.hpp"
+#include "lidar_localization/models/assess/assess_interface.hpp"
 
 namespace lidar_localization {
 class BackEnd {
@@ -40,6 +41,7 @@ class BackEnd {
     bool InitParam(const YAML::Node& config_node);
     bool InitGraphOptimizer(const YAML::Node& config_node);
     bool InitDataPath(const YAML::Node& config_node);
+    bool InitMapAssess(const YAML::Node& config_node);
 
     void ResetParam();
     bool SavePose(std::ofstream& ofs, const Eigen::Matrix4f& pose);
@@ -65,6 +67,10 @@ class BackEnd {
     KeyFrame current_key_gnss_;
     std::deque<KeyFrame> key_frames_deque_;
     std::deque<Eigen::Matrix4f> optimized_pose_;
+    std::deque<Eigen::Matrix4f> gnss_pose_;
+
+    //评价器
+      std::shared_ptr<AssessInterface> map_assess_ptr_;
 
     // 优化器
     std::shared_ptr<InterfaceGraphOptimizer> graph_optimizer_ptr_;

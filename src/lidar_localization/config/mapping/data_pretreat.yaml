@@ -1,0 +1,21 @@
+# map:
+#   ori_longitude_: 121.439743
+#   ori_latitude_: 31.0263253
+#   ori_altitude_: 15.866
+
+map:
+  ori_longitude_: 118.1789369
+  ori_latitude_: 31.1367846
+  ori_altitude_: 95
+
+lidar2imu_: [ 1, 0, 0,0,
+                         0, 1,0,0, 
+                         0, 0,1,0,
+                         0,0,0,1]
+
+
+## 滤波相关参数
+range_filter:
+    min_distance: 8.0
+    max_distance: 70.0
+

@@ -19,6 +19,7 @@ BackEndFlow::BackEndFlow(ros::NodeHandle& nh) {
 
     transformed_odom_pub_ptr_ = std::make_shared<OdometryPublisher>(nh, "/transformed_odom", "/map", "/lidar", 100);
     key_frame_pub_ptr_ = std::make_shared<KeyFramePublisher>(nh, "/key_frame", "/map", 100);
+    map_origin_pub_ptr_=std::make_shared<KeyFramePublisher>(nh, "/map_origin", "/map", 100);
     key_gnss_pub_ptr_ = std::make_shared<KeyFramePublisher>(nh, "/key_gnss", "/map", 100);
     key_frames_pub_ptr_ = std::make_shared<KeyFramesPublisher>(nh, "/optimized_key_frames", "/map", 100);
 
@@ -118,8 +119,13 @@ bool BackEndFlow::UpdateBackEnd() {
     //lr:如果是第一帧，就把其设置为第一帧的GNSS数据
     //lr:如果不是第一帧，就把他设置为传输过来的lidar_odom的数据
     //主要是为了保证后端输入额位姿都统一到东北天坐标系之中
+    //在前端中的odom是在以第一帧为原点的局部坐标系下面的
+    //在后端中的代码则是在全局坐标系下面的
     if (!odometry_inited) {
         odometry_inited = true;
+        KeyFrame map_origin;
+        map_origin.pose=current_gnss_pose_data_.pose;
+        map_origin_pub_ptr_->Publish(map_origin);
         odom_init_pose = current_gnss_pose_data_.pose * current_laser_odom_data_.pose.inverse();
     }
     current_laser_odom_data_.pose = odom_init_pose * current_laser_odom_data_.pose;

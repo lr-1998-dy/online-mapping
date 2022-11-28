@@ -30,7 +30,7 @@ class ElevationRasterization: public RasterizationInterface {
     bool Erode_Dilate(nav_msgs::OccupancyGrid &gridmap);
     bool InflateGradMap(const nav_msgs::OccupancyGrid &gridmap,nav_msgs::OccupancyGrid &inflated_gridmap);
     bool WriteToJson(const nav_msgs::OccupancyGrid &inflated_gridmap);
-
+    bool WriteToNewJson(const nav_msgs::OccupancyGrid &inflated_gridmap);
 
   private:
     int count_threshold_;

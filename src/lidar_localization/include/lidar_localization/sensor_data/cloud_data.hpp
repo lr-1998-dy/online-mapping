@@ -1,7 +1,7 @@
 /*
  * @Description:
  * @Author: Li Rui
- * @Date: 2019-07-17 18:17:49
+ * @Date: 2022-07-17 18:17:49
  */
 #ifndef LIDAR_LOCALIZATION_SENSOR_DATA_CLOUD_DATA_HPP_
 #define LIDAR_LOCALIZATION_SENSOR_DATA_CLOUD_DATA_HPP_
@@ -12,7 +12,7 @@
 namespace lidar_localization {
 class CloudData {
   public:
-    using POINT = pcl::PointXYZ;
+    using POINT = pcl::PointXYZI;
     using CLOUD = pcl::PointCloud<POINT>;
     using CLOUD_PTR = CLOUD::Ptr;
 

@@ -1,6 +1,6 @@
 /*
  * @Author: Li Rui
- * @LastEditTime: 2022-09-12 10:08:57
+ * @LastEditTime: 2022-11-01 16:04:12
  * @LastEditors: lr 2012227985@qq.com
  * @Description: 地图的后处理，接收GNSS的关键帧位姿，
  * 计算出来有多少帧数据，去除地面点，读取优化之后的位姿，拼接，变成栅格
@@ -19,6 +19,7 @@
 #include "lidar_localization/subscriber/key_frame_subscriber.hpp"
 // publisher
 #include "lidar_localization/publisher/cloud_publisher.hpp"
+#include "lidar_localization/publisher/gridmap_publisher.hpp"
 #include "lidar_localization/mapping/post_processing/post_processing.hpp"
 
 namespace lidar_localization {
@@ -26,15 +27,17 @@ class PostProcessingFlow {
   public:
     PostProcessingFlow(ros::NodeHandle& nh);
 
-    bool SaveMap();
     bool Run();
-    bool GetGridMap();
+    bool SaveMap();
+    bool PublishData();
 
   private:
     bool ReadData();
     bool HasData();
     bool ValidData();
-    bool PublishData();
+    // bool GetGridMap();
+    // bool GetGlobalMap();
+
 
   private:
     // subscriber
@@ -42,6 +45,7 @@ class PostProcessingFlow {
     std::shared_ptr<KeyFrameSubscriber> key_frame_sub_ptr_;
     // publisher
     std::shared_ptr<CloudPublisher> map_without_ground_pub_ptr_;
+    std::shared_ptr<GridMapPublisher> gridmap_without_ground_pub_ptr_;
 
     std::deque<KeyFrame> optimized_odom_buff_;
     std::deque<KeyFrame> key_frame_buff_;
@@ -49,7 +53,8 @@ class PostProcessingFlow {
     
     int key_frames_size_=0;
 
-    nav_msgs::OccupancyGrid inflated_gridmap_;
+    // nav_msgs::OccupancyGrid inflated_gridmap_;
+    // CloudData::CLOUD_PTR global_map_with_out_ground_;
 };
 }
 

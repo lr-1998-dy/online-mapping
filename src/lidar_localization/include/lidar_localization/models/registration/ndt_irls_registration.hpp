@@ -8,12 +8,20 @@
 
 #include "irls_ndt/ndt_scan_matcher.h"
 #include "lidar_localization/models/registration/registration_interface.hpp"
+#include "irls_ndt/ndt_scan_matcher.h"
 
 namespace lidar_localization {
 class NDTIrlsRegistration: public RegistrationInterface {
   public:
     NDTIrlsRegistration(const YAML::Node& node);
-    NDTIrlsRegistration(float res, float step_size, float trans_eps, int max_iter,int threads);
+    NDTIrlsRegistration(int max_irls,
+                                              int max_iterations,
+                                              int min_neighbor_num,
+                                              float min_score,
+                                              float ndt_resolution,
+                                              float outlier_ratio,
+                                              int search_neighbor_num,
+                                              float transformation_epsilon);
 
     bool SetInputTarget(const CloudData::CLOUD_PTR& input_target) override;
     bool ScanMatch(const CloudData::CLOUD_PTR& input_source, 
@@ -23,7 +31,7 @@ class NDTIrlsRegistration: public RegistrationInterface {
     float GetFitnessScore() override;
   
   private:
-    bool SetRegistrationParam(float res, float step_size, float trans_eps, int max_iter,int threads);
+    bool SetRegistrationParam(irls_ndt::NDTLocParam params);
 
   private:
     // pclomp::NormalDistributionsTransform<CloudData::POINT, CloudData::POINT>::Ptr ndt_ptr_;

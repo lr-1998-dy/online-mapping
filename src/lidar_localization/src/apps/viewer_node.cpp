@@ -40,6 +40,7 @@ int main(int argc, char *argv[]) {
         if (_need_save_map) {
             _need_save_map = false;
             _viewer_flow_ptr->SaveMap();
+            _viewer_flow_ptr->PublishGlobalData();
         }
 
         rate.sleep();

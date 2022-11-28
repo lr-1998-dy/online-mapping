@@ -1,7 +1,7 @@
 /*
  * @Description: 
  * @Author: Li Rui
- * @Date: 2019-07-17 18:27:40
+ * @Date: 2022-07-17 18:27:40
  */
 #ifndef LIDAR_LOCALIZATION_SENSOR_DATA_IMU_DATA_HPP_
 #define LIDAR_LOCALIZATION_SENSOR_DATA_IMU_DATA_HPP_
@@ -9,6 +9,7 @@
 #include <deque>
 #include <cmath>
 #include <Eigen/Dense>
+#include <sensor_msgs/Imu.h>
 
 namespace lidar_localization {
 class IMUData {

@@ -58,15 +58,6 @@ bool VoxelGridCovariance::run(const VoxelGridCovariance::PointCloudPtr& cloud_in
         leaf._cov += pt3d * pt3d.transpose();
         ++leaf._nr_points;
     }
-    // delete invalid cells
-    auto itr = _leaves.begin();
-    while (itr != _leaves.end()) {
-        if (itr->second._nr_points < _min_points_per_voxel) {
-            itr = _leaves.erase(itr);
-        } else {
-            ++itr;
-        }
-    }
     Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigensolver;
     Eigen::Matrix3d eigen_val;
     Eigen::Vector3d pt_sum;
@@ -76,9 +67,13 @@ bool VoxelGridCovariance::run(const VoxelGridCovariance::PointCloudPtr& cloud_in
         pt_sum = leaf._mean;
         leaf._mean /= leaf._nr_points;
         // Single pass covariance calculation
-        leaf._cov = (leaf._cov - 2 * (pt_sum * leaf._mean.transpose())) / leaf._nr_points +
-                    leaf._mean * leaf._mean.transpose();
-        leaf._cov *= (leaf._nr_points - 1.0) / leaf._nr_points;
+        // leaf._cov = (leaf._cov - 2 * (pt_sum * leaf._mean.transpose())) / leaf._nr_points +
+        //             leaf._mean * leaf._mean.transpose();
+        // leaf._cov *= (leaf._nr_points - 1.0) / leaf._nr_points;
+
+        leaf._cov = (leaf._cov - pt_sum * leaf._mean.transpose() - leaf._mean * pt_sum.transpose()) + 
+                        leaf._mean * leaf._mean.transpose() * leaf._nr_points;
+        leaf._cov = leaf._cov / (leaf._nr_points - 1);
         // Normalize Eigen Val such that max no more than 100x min.
         eigensolver.compute(leaf._cov);
         eigen_val = eigensolver.eigenvalues().asDiagonal();
@@ -108,6 +103,16 @@ bool VoxelGridCovariance::run(const VoxelGridCovariance::PointCloudPtr& cloud_in
             leaf._nr_points = -1;
         }
     }
+    // delete invalid cells which contain not sufficient points
+    auto itr = _leaves.begin();
+    while (itr != _leaves.end()) {
+        if (itr->second._nr_points < _min_points_per_voxel) {
+            itr = _leaves.erase(itr);
+        } else {
+            ++itr;
+        }
+    }
+
     return true;
 }
 

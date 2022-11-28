@@ -5,6 +5,8 @@
  */
 
 #include <cmath>
+#include <ctime>
+#include <sstream>
 #include <algorithm>
 #include <pcl/common/transforms.h>
 #include <pcl/io/pcd_io.h>
@@ -32,7 +34,9 @@ bool Post_Processing::InitWithConfig() {
     InitDataPath(config_node);
     InitFilter("map", map_filter_ptr_, config_node);
     InitFilter("global_map", map_without_ground_filter_ptr_, config_node);
+    InitFilter("global_map", post_map_without_ground_filter_ptr_, config_node);
     InitRasterization("global_map", map_rasterization_ptr_, config_node);
+    global_map_with_out_ground_.reset(new CloudData::CLOUD());
     return true;
 }
 
@@ -40,15 +44,43 @@ bool Post_Processing::InitParam(const YAML::Node& config_node) {
     return true;
 }
 
+std::string Post_Processing::GetDate(){
+    std::string date;
+    time_t now = time(0);
+    
+    tm *ltm = localtime(&now);
+
+    //补零位
+	std::stringstream fillmonzero;
+	fillmonzero << std::setw(2) << std::setfill('0') << (1 + ltm->tm_mon) ;
+	std::string mon;
+	fillmonzero >> mon;     
+
+	std::stringstream filldayzero;
+    filldayzero << std::setw(2) << std::setfill('0') << (ltm->tm_mday) ;
+	std::string day;
+	filldayzero >> day;     
+
+    // 输出 tm 结构的各个组成部分
+    date=std::to_string(1900 + ltm->tm_year)+mon+day;
+    return date;
+}
+
 bool Post_Processing::InitDataPath(const YAML::Node& config_node) {
     std::string data_path = config_node["data_path"].as<std::string>();
+    std::string map_path = config_node["map_path"].as<std::string>();
     if (data_path == "./") {
         data_path = WORK_SPACE_PATH;
     }
 
     key_frames_path_ = data_path + "/slam_data";
     std::string key_frames_path=key_frames_path_+"/key_frames";
-    std::string map_path=key_frames_path_+"/map";
+
+    if (map_path == "./") {
+        map_path_=key_frames_path_+"/map";
+    }else{
+        map_path_=map_path+"/"+GetDate();
+    }
 
     //保证所依赖的文件夹在次之前就建好了
     while (!(FileManager::IsDirectory(key_frames_path_)&&FileManager::IsDirectory(key_frames_path)))
@@ -61,7 +93,7 @@ bool Post_Processing::InitDataPath(const YAML::Node& config_node) {
     if (!FileManager::InitDirectory(key_frames_path_ + "/post_key_frames","后处理之后的点云"))
         return false;
 
-    if (!FileManager::InitDirectory(map_path, "后处理之后的点云地图文件"))
+    if (!FileManager::InitDirectory(map_path_, "后处理之后的点云地图文件"))
         return false;
 
 
@@ -76,7 +108,13 @@ bool Post_Processing::InitFilter(std::string filter_user, std::shared_ptr<CloudF
         filter_ptr = std::make_shared<VoxelFilter>(config_node[filter_mothod][filter_user]);
         return true;
     } 
+
     if (filter_mothod == "ground_filter") {
+        filter_ptr = std::make_shared<GroundFilter>(config_node[filter_mothod]);
+        return true;
+    } 
+
+    if (filter_mothod == "post_ground_filter") {
         filter_ptr = std::make_shared<GroundFilter>(config_node[filter_mothod]);
         return true;
     } 
@@ -91,7 +129,7 @@ bool Post_Processing::InitRasterization(std::string rasterization_user, std::sha
 
     if (rasterization_mothod=="elevation_rasterization")
     {
-        map_rasterization_ptr_=std::make_shared<ElevationRasterization>(config_node[rasterization_mothod],key_frames_path_);
+        map_rasterization_ptr_=std::make_shared<ElevationRasterization>(config_node[rasterization_mothod],map_path_);
         return true;
     }
 
@@ -114,7 +152,7 @@ bool Post_Processing::Update(std::deque<KeyFrame>  key_frame_buff_) {
 
     for (int i = last_id; i <= key_frame_buff_.back().index; i++)
     {
-        SaveKeyCloud(key_frame_buff_[i].index,cloud_ptr);
+        SaveKeyCloud(i,cloud_ptr);
     }
     last_id=key_frame_buff_.back().index;
 
@@ -166,6 +204,7 @@ bool Post_Processing::SaveKeyCloud(int id,CloudData::CLOUD_PTR cloud_ptr) {
 bool Post_Processing::JointMap(const std::deque<KeyFrame>& optimized_odom_buff_,CloudData::CLOUD_PTR  &global_map_without_ground) 
 {
     global_map_without_ground.reset(new CloudData::CLOUD());
+    LOG(INFO)<<"optimized_odom_buff_.size():   "<<optimized_odom_buff_.size();
     for (int i = 0; i < optimized_odom_buff_.size(); i++)
     {
         Eigen::Matrix4f current_optimized_odom=optimized_odom_buff_.at(i).pose;
@@ -184,11 +223,14 @@ bool Post_Processing::JointMap(const std::deque<KeyFrame>& optimized_odom_buff_,
 bool Post_Processing::SaveMap(const std::deque<KeyFrame>& optimized_odom_buff_){
     if (optimized_odom_buff_.size() == 0)
         return false;
+    CloudData::CLOUD_PTR map_with_out_ground(new CloudData::CLOUD());
     CloudData::CLOUD_PTR global_map_with_out_ground(new CloudData::CLOUD());
-    JointMap(optimized_odom_buff_,global_map_with_out_ground);
-    std::string map_file_path=key_frames_path_+"/map/"+"global_map_with_out_ground.pcd";
+    JointMap(optimized_odom_buff_,map_with_out_ground);
+    post_map_without_ground_filter_ptr_->Filter(map_with_out_ground,global_map_with_out_ground);
+    std::string map_file_path=map_path_+"/global_map_with_out_ground.pcd";
     pcl::io::savePCDFileBinary(map_file_path, *global_map_with_out_ground);
     LOG(INFO)<<"去除地面点的地图保存为："<<map_file_path;
+    pcl::copyPointCloud(*global_map_with_out_ground,*global_map_with_out_ground_);
     //创建栅格地图并且存储
     map_rasterization_ptr_->CreateGridMap(global_map_with_out_ground);
     inflated_gridmap_=map_rasterization_ptr_->GetGridMap();
@@ -198,6 +240,11 @@ bool Post_Processing::SaveMap(const std::deque<KeyFrame>& optimized_odom_buff_){
 nav_msgs::OccupancyGrid Post_Processing::GetGridMap(){
     return inflated_gridmap_;
 }
+
+CloudData::CLOUD_PTR Post_Processing::GetGlobalMap(){
+    return global_map_with_out_ground_;
+}
+
 
 }
 

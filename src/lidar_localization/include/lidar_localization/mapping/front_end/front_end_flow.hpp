@@ -42,6 +42,7 @@ class FrontEndFlow {
 
     CloudData current_cloud_data_;
     PoseData current_gnss_pose_data_;
+    PoseData last_gnss_pose_data_;
 
     Eigen::Matrix4f laser_odometry_ = Eigen::Matrix4f::Identity();
 

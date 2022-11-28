@@ -3,15 +3,18 @@
  * @Author: Li Rui
  * @Date: 2022-02-10 08:38:42
  */
-#include "lidar_localization/mapping/viewer/viewer_flow.hpp"
 #include "glog/logging.h"
+#include <pcl/common/transforms.h>
+
 #include "lidar_localization/global_defination/global_defination.h"
+#include "lidar_localization/mapping/viewer/viewer_flow.hpp"
 
 namespace lidar_localization {
 ViewerFlow::ViewerFlow(ros::NodeHandle& nh) {
     // subscriber
     cloud_sub_ptr_ = std::make_shared<CloudSubscriber>(nh, "/synced_cloud", 100000);
     key_frame_sub_ptr_ = std::make_shared<KeyFrameSubscriber>(nh, "/key_frame", 100000);
+    map_origin_sub_ptr_ = std::make_shared<KeyFrameSubscriber>(nh, "/map_origin", 100000);
     transformed_odom_sub_ptr_ = std::make_shared<OdometrySubscriber>(nh, "/transformed_odom", 100000);
     optimized_key_frames_sub_ptr_ = std::make_shared<KeyFramesSubscriber>(nh, "/optimized_key_frames", 100000);
     // publisher
@@ -19,6 +22,7 @@ ViewerFlow::ViewerFlow(ros::NodeHandle& nh) {
     current_scan_pub_ptr_ = std::make_shared<CloudPublisher>(nh, "/current_scan", "/map", 100);
     global_map_pub_ptr_ = std::make_shared<CloudPublisher>(nh, "/global_map", "/map", 100);
     local_map_pub_ptr_ = std::make_shared<CloudPublisher>(nh, "/local_map", "/map", 100);
+    gridmap_without_ground_pub_ptr_=std::make_shared<GridMapPublisher>(nh, "/gridmap_without_ground", "/map", 100);
     // viewer
     viewer_ptr_ = std::make_shared<Viewer>();
 }
@@ -36,7 +40,6 @@ bool ViewerFlow::Run() {
 
     if (optimized_key_frames_.size() > 0) {
         viewer_ptr_->UpdateWithOptimizedKeyFrames(optimized_key_frames_);
-        PublishGlobalData();
     }
 
     return true;
@@ -46,6 +49,7 @@ bool ViewerFlow::ReadData() {
     cloud_sub_ptr_->ParseData(cloud_data_buff_);
     transformed_odom_sub_ptr_->ParseData(transformed_odom_buff_);
     key_frame_sub_ptr_->ParseData(key_frame_buff_);
+    map_origin_sub_ptr_->ParseData(map_origin_buff_);
     optimized_key_frames_sub_ptr_->ParseData(optimized_key_frames_);
 
     return true;
@@ -55,6 +59,8 @@ bool ViewerFlow::HasData() {
     if (cloud_data_buff_.size() == 0)
         return false;
     if (transformed_odom_buff_.size() == 0)
+        return false;
+    if (map_origin_buff_.size() == 0)
         return false;
 
     return true;
@@ -76,6 +82,8 @@ bool ViewerFlow::ValidData() {
         return false;
     }
 
+    map_origin_=map_origin_buff_.front();
+
     cloud_data_buff_.pop_front();
     transformed_odom_buff_.pop_front();
 
@@ -85,8 +93,10 @@ bool ViewerFlow::ValidData() {
 bool ViewerFlow::PublishGlobalData() {
     if (viewer_ptr_->HasNewGlobalMap() && global_map_pub_ptr_->HasSubscribers()) {
         CloudData::CLOUD_PTR cloud_ptr(new CloudData::CLOUD());
-        viewer_ptr_->GetGlobalMap(cloud_ptr);
-        global_map_pub_ptr_->Publish(cloud_ptr);
+        nav_msgs::OccupancyGrid inflated_gridmap;
+        viewer_ptr_->GetGlobalMap(cloud_ptr,inflated_gridmap);
+        global_map_pub_ptr_->Publish(SetToOrigin(cloud_ptr));
+        gridmap_without_ground_pub_ptr_->Publish(inflated_gridmap);
     }
 
     return true;
@@ -94,15 +104,28 @@ bool ViewerFlow::PublishGlobalData() {
 
 bool ViewerFlow::PublishLocalData() {
     optimized_odom_pub_ptr_->Publish(viewer_ptr_->GetCurrentPose());
-    current_scan_pub_ptr_->Publish(viewer_ptr_->GetCurrentScan());
+    current_scan_pub_ptr_->Publish(SetToOrigin(viewer_ptr_->GetCurrentScan()));
 
     if (viewer_ptr_->HasNewLocalMap() && local_map_pub_ptr_->HasSubscribers()) {
         CloudData::CLOUD_PTR cloud_ptr(new CloudData::CLOUD());
         viewer_ptr_->GetLocalMap(cloud_ptr);
-        local_map_pub_ptr_->Publish(cloud_ptr);
+        local_map_pub_ptr_->Publish(SetToOrigin(cloud_ptr));
     }
 
     return true;
+}
+
+bool ViewerFlow::SetToOrigin(nav_msgs::OccupancyGrid& inflated_gridmap) {
+
+
+}
+
+CloudData::CLOUD_PTR& ViewerFlow::SetToOrigin( CloudData::CLOUD_PTR& cloud_ptr) {
+    CloudData::CLOUD_PTR cloud_tmp_ptr(new CloudData::CLOUD());
+    pcl::copyPointCloud(*cloud_ptr,*cloud_tmp_ptr);
+    pcl::transformPointCloud(*cloud_tmp_ptr, *cloud_ptr, map_origin_.pose.inverse());
+
+    return cloud_ptr;
 }
 
 bool ViewerFlow::SaveMap() {

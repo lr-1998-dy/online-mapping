@@ -1,7 +1,7 @@
 /*
  * @Description: 订阅odometry数据
  * @Author: Li Rui
- * @Date: 2019-06-14 16:44:18
+ * @Date: 2022-06-14 16:44:18
  */
 #include "lidar_localization/subscriber/odometry_subscriber.hpp"
 #include "glog/logging.h"

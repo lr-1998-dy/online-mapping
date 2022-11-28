@@ -1,4 +1,12 @@
 /*
+ * @Author: lr 2012227985@qq.com
+ * @Date: 2022-10-20 15:13:37
+ * @LastEditors: lr 2012227985@qq.com
+ * @LastEditTime: 2022-11-28 19:56:37
+ * @FilePath: /src/lidar_localization/src/mapping/front_end/front_end.cpp
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
+/*
  * @Description: 前端里程计算法
  * @Author: Li Rui
  * @Date: 2022-02-04 18:53:06
@@ -16,6 +24,7 @@
 #include "lidar_localization/models/registration/ndt_registration.hpp"
 #include "lidar_localization/models/registration/ndt_omp_registration.hpp"
 #include "lidar_localization/models/registration/ndt_irls_registration.hpp"
+#include "lidar_localization/models/registration/icp_registration.hpp"
 #include "lidar_localization/models/cloud_filter/voxel_filter.hpp"
 #include "lidar_localization/models/cloud_filter/no_filter.hpp"
 
@@ -24,6 +33,8 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
+
+Eigen::Matrix4f lidar_localization::FrontEnd::last_gnss_pose_ = Eigen::Matrix4f::Identity();
 
 namespace lidar_localization {
 FrontEnd::FrontEnd()
@@ -71,6 +82,9 @@ bool FrontEnd::InitRegistration(std::shared_ptr<RegistrationInterface>& registra
         return true;
     } 
 
+    if (registration_method == "ICP") {
+        registration_ptr = std::make_shared<ICPRegistration>(config_node[registration_method]);
+    } 
 
     LOG(ERROR) << "没找到与 " << registration_method << " 相对应的点云匹配方式!";
     return false;
@@ -138,7 +152,15 @@ bool FrontEnd::Update(const CloudData& cloud_data, Eigen::Matrix4f& cloud_pose) 
     return true;
 }
 
+/**
+ * @description: 在世界坐标系下做匹配
+ * @param {CloudData&} cloud_data
+ * @param {Matrix4f&} cloud_pose
+ * @param {Matrix4f&} predict_gnsspose
+ * @return {*}
+ */
 bool FrontEnd::Update(const CloudData& cloud_data, Eigen::Matrix4f& cloud_pose,const Eigen::Matrix4f& predict_gnsspose) {
+    static Eigen::Matrix4f last_gnsspose;
     current_frame_.cloud_data.time = cloud_data.time;
     std::vector<int> indices;
     pcl::removeNaNFromPointCloud(*cloud_data.cloud_ptr, *current_frame_.cloud_data.cloud_ptr, indices);
@@ -146,18 +168,28 @@ bool FrontEnd::Update(const CloudData& cloud_data, Eigen::Matrix4f& cloud_pose,c
     CloudData::CLOUD_PTR filtered_cloud_ptr(new CloudData::CLOUD());
     frame_filter_ptr_->Filter(current_frame_.cloud_data.cloud_ptr, filtered_cloud_ptr);
 
+    //use 
     // static Eigen::Matrix4f step_pose = Eigen::Matrix4f::Identity();
     // static Eigen::Matrix4f last_pose = init_pose_;
     // static Eigen::Matrix4f predict_pose = predict_pose;
-    Eigen::Matrix4f predict_pose=init_gnss_pose_.inverse()*predict_gnsspose;
-    static Eigen::Matrix4f last_key_frame_pose = init_pose_;
 
-    // 局部地图容器中没有关键帧，代表是第一帧数据
+    //use   rtk as predict_pose
+    Eigen::Matrix4f predict_pose=init_gnss_pose_.inverse()*(current_frame_.pose*last_gnsspose.inverse()*predict_gnsspose);
+    static Eigen::Matrix4f last_key_frame_pose = init_pose_;
+    static Eigen::Matrix4f last_frame_pose = init_pose_;
+
+    // //use   rtk as predict_pose
+    // Eigen::Matrix4f predict_pose=init_gnss_pose_.inverse()*predict_gnsspose;
+    // static Eigen::Matrix4f last_key_frame_pose = init_pose_;
+
+
+    // 局部地图容器中没有关键帧，代表是第一帧数据,第一帧也一定就是关键帧数据
     // 此时把当前帧数据作为第一个关键帧，并更新局部地图容器和全局地图容器
     if (local_map_frames_.size() == 0) {
         current_frame_.pose = init_pose_;
         UpdateWithNewFrame(current_frame_);
         cloud_pose = current_frame_.pose;
+        last_gnsspose=current_frame_.pose;
         return true;
     }
 
@@ -179,6 +211,7 @@ bool FrontEnd::Update(const CloudData& cloud_data, Eigen::Matrix4f& cloud_pose,c
         last_key_frame_pose = current_frame_.pose;
     }
 
+    last_gnsspose=current_frame_.pose;
     return true;
 }
 

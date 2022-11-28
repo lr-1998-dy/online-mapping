@@ -73,7 +73,7 @@ bool NDTScanMatcher::prepareItem(const PointCloud& trans_cloud) {
     _v_A.clear();
     _v_M.clear();
     _v_V.clear();
-    size_t reserve_len = trans_cloud.size();
+    size_t reserve_len  = trans_cloud.size() * _param.search_neighbor_num;
     _v_W.reserve(reserve_len);
     _v_A.reserve(reserve_len);
     _v_M.reserve(reserve_len);
@@ -137,6 +137,7 @@ void NDTScanMatcher::assign2Mat() {
     }
     // remember to exp() for the weight.
     double maxW = _W_vec.maxCoeff();
+    // normalize the weight into between 0 and 1
     _W_vec = (_W_vec.array() - maxW).exp();
 }
 
@@ -144,6 +145,7 @@ NDTScanMatcher::SafeMatrix4d NDTScanMatcher::computeRT() {
     Eigen::MatrixXd H;
     Eigen::VectorXd b;
     computeHessianVectorized(_V_mat, _A_mat, _W_vec, _M_mat, H, b);
+    // computeHessianOrdinary(_V_mat, _A_mat, _W_vec, _M_mat, H, b);
     // solve the equation: Hx = -b
     Eigen::LDLT<Eigen::MatrixXd> ldlt(H);
     Eigen::VectorXd x = ldlt.solve(-b);

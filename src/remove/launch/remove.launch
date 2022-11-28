@@ -1,0 +1,28 @@
+<launch>
+    
+    <!-- <arg name="arg_json_file_path" default="/home/lr/Downloads/qq-files/2012227985/file_recv/bb95/bb95_global_map(0608).json"/> -->
+    <!-- <arg name="arg_json_file_path" default="/home/lr/Downloads/qq-files/2012227985/file_recv/110_e/110empty_global_map.json"/> -->
+    <!-- <arg name="arg_json_file_path" default="/home/lr/Downloads/qq-files/2012227985/file_recv/110/110_global_map.json"/> -->
+    <arg name="arg_json_file_path" default="/media/lirui/LENOVO_USB_HDD/Haibo_dataset/gridmap/20221104/global_map.json"/>
+
+
+    <param name="json_file_path" type="string" value="$(arg arg_json_file_path)" />
+
+    <!-- <param name="up_path" type="string" value="/media/lr/LENOVO_USB_HDD/Haibo_dataset/gridmap/220523/map/07/u2_BB95_xy(08).csv" /> -->
+    <!-- <param name="down_path" type="string" value="/media/lr/LENOVO_USB_HDD/Haibo_dataset/gridmap/220523/map/07/d2_BB95_xy(08).csv" /> --> --> -->
+
+    <param name="up_path" type="string" value="/media/lr/LENOVO_USB_HDD/Haibo_dataset/gridmap/220523/map/05/u2_BB95_xy.csv" /> -->
+    <param name="down_path" type="string" value="/media/lr/LENOVO_USB_HDD/Haibo_dataset/gridmap/220523/map/05/d2_BB95_xy.csv" /> -->
+
+
+
+    <param name="OccVal" type="int" value="0" />
+
+    <node pkg="remove" type="remove" name="remove" output="screen"/>
+
+    <arg name="rviz" default="true" />
+    <group if="$(arg rviz)">
+        <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find remove)/rviz/test.rviz" />
+    </group>
+
+</launch>
