@@ -1,8 +1,8 @@
 # 匹配
 # registration_method: NDT   # 选择点云匹配方法，目前支持：NDT 
-# registration_method: NDT-OMP   # 选择点云匹配方法，目前支持：NDT-OMP
+registration_method: NDT-OMP   # 选择点云匹配方法，目前支持：NDT-OMP
 # registration_method: NDT-IRLS   # 选择点云匹配方法，目前支持：NDT-OMP
-registration_method: ICP
+# registration_method: ICP
 
 prior_information: GNSS   # 选择点云匹配先验信息，目前支持：GNSS 
 # prior_information: Predict   # 选择点云匹配先验信息，目前支持：GNSS 

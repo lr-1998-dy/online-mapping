@@ -28,7 +28,7 @@ voxel_filter:
 
 #生成栅格的相关参数
 elevation_rasterization:
-    count_threshold : 5
+    count_threshold : 4
     height_threshold : 0.3
     inflation_map_x : 150
     inflation_map_y : 150
