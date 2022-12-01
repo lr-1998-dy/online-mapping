@@ -13,6 +13,7 @@
 #include "lidar_localization/tools/file_manager.hpp"
 #include "lidar_localization/global_defination/global_defination.h"
 #include"lidar_localization/models/rasterization/elevation_rasterization.hpp"
+#include "lidar_localization/models/cloud_filter/ground_filter.hpp"
 
 #define SAVE_MAP 1
 #define SAVE_POST_MAP 0
@@ -32,6 +33,7 @@ bool Viewer::InitWithConfig() {
     InitFilter("frame", frame_filter_ptr_, config_node);
     InitFilter("local_map", local_map_filter_ptr_, config_node);
     InitFilter("global_map", global_map_filter_ptr_, config_node);
+    InitFilter("global_map_ground", global_map_ground_filter_ptr_, config_node);
     InitRasterization("global_map", map_rasterization_ptr_, config_node);
 
     return true;
@@ -99,12 +101,15 @@ bool Viewer::InitFilter(std::string filter_user, std::shared_ptr<CloudFilterInte
 
     if (filter_mothod == "voxel_filter") {
         filter_ptr = std::make_shared<VoxelFilter>(config_node[filter_mothod][filter_user]);
-    } else {
-        LOG(ERROR) << "没有为 " << filter_user << " 找到与 " << filter_mothod << " 相对应的滤波方法!";
-        return false;
-    }
+    } 
 
-    return true;
+    if (filter_mothod == "ground_filter") {
+        filter_ptr = std::make_shared<GroundFilter>(config_node[filter_mothod]);
+        return true;
+    } 
+
+    LOG(ERROR) << "没有为 " << filter_user << " 找到与 " << filter_mothod << " 相对应的滤波方法!";
+    return false;
 }
 
 bool Viewer::InitRasterization(std::string rasterization_user, std::shared_ptr<RasterizationInterface>& filter_ptr, const YAML::Node& config_node){
@@ -238,7 +243,7 @@ bool Viewer::SaveMap() {
 
     CloudData::CLOUD_PTR global_map_without_ground_ptr(new CloudData::CLOUD());
     JointCloudMap(optimized_key_frames_, global_map_without_ground_ptr,SAVE_POST_MAP);
-    global_map_filter_ptr_->Filter(global_map_without_ground_ptr, global_map_without_ground_ptr);
+    // global_map_ground_filter_ptr_->Filter(global_map_without_ground_ptr,global_map_without_ground_ptr);
 
     std::string map_without_ground_file_path = map_path_ + "/post_map.pcd";
     pcl::io::savePCDFileBinary(map_without_ground_file_path, *global_map_without_ground_ptr);

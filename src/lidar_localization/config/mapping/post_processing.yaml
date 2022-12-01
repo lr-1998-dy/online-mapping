@@ -12,12 +12,12 @@ global_map_rasterization: elevation_rasterization
 ## 地面滤除相关参数
 ground_filter:
     opt_coeff : 1
-    dist_threshold : 0.8
+    dist_threshold : 1.2
     max_iter : 1000
 #postmap地面滤除相关参数
 post_ground_filter:
     opt_coeff : 1
-    dist_threshold : 0.8
+    dist_threshold : 1.2
     max_iter : 1000
 ## 滤波相关参数
 voxel_filter:

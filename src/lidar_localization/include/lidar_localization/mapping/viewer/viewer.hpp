@@ -65,6 +65,7 @@ class Viewer {
     std::shared_ptr<CloudFilterInterface> frame_filter_ptr_;
     std::shared_ptr<CloudFilterInterface> local_map_filter_ptr_;
     std::shared_ptr<CloudFilterInterface> global_map_filter_ptr_;
+    std::shared_ptr<CloudFilterInterface> global_map_ground_filter_ptr_;
 
     std::shared_ptr<RasterizationInterface> map_rasterization_ptr_;
 

@@ -5,6 +5,7 @@ map_path: ./   # 地图存放路径,本电脑或者mdc上的路径
 #滤波参数
 # 全局地图
 global_map_filter: voxel_filter # 选择全局地图点云滤波方法，目前支持：voxel_filter
+global_map_ground_filter: ground_filter
 
 # 局部地图
 local_frame_num: 20
@@ -26,10 +27,15 @@ voxel_filter:
     frame:
         leaf_size: [0.5, 0.5, 0.5]
 
+ground_filter:
+    opt_coeff : 1
+    dist_threshold : 0.5
+    max_iter : 1000
+
 #生成栅格的相关参数
 elevation_rasterization:
-    count_threshold : 4
-    height_threshold : 0.3
+    count_threshold : 3
+    height_threshold : 0.2
     inflation_map_x : 150
     inflation_map_y : 150
     map_resolution: 1

@@ -58,10 +58,13 @@ bool ElevationRasterization::CreateGridMap(const CloudData::CLOUD_PTR& cloud_map
         return false;
     }
     nav_msgs::OccupancyGrid gridmap;
-    CreateInitialMap(cloud_map,gridmap);
-    Erode_Dilate(gridmap);
+    cv::Mat cv_gridmap;
+    cv::Mat cv_pointscount;
+    CreateInitialMap(cloud_map,gridmap,cv_gridmap,cv_pointscount);
+    Erode_Dilate(cv_gridmap);
+    Feature_Extraction(cv_gridmap,cv_pointscount);
+    WriteToGrid(cv_gridmap,gridmap);
     InflateGradMap(gridmap,inflated_gridmap_);
-    // WriteToJson(inflated_gridmap_);
     WriteToNewJson(inflated_gridmap_);
 
     return true;
@@ -73,7 +76,7 @@ bool ElevationRasterization::CreateGridMap(const CloudData::CLOUD_PTR& cloud_map
  * @param {OccupancyGrid} &gridmap
  * @return {*}
  */
-bool ElevationRasterization::CreateInitialMap(const CloudData::CLOUD_PTR& cloud_map,nav_msgs::OccupancyGrid &gridmap) {
+bool ElevationRasterization::CreateInitialMap(const CloudData::CLOUD_PTR& cloud_map,nav_msgs::OccupancyGrid &gridmap,cv::Mat &cv_gridmap,cv::Mat &cv_pointscount) {
 
     gridmap.header.seq = 0;
     gridmap.header.stamp = ros::Time::now();
@@ -165,15 +168,21 @@ bool ElevationRasterization::CreateInitialMap(const CloudData::CLOUD_PTR& cloud_
 
     gridmap.data.resize(gridmap.info.width * gridmap.info.height);
     gridmap.data.assign(gridmap.info.width * gridmap.info.height, 0);
+    cv_gridmap=cv::Mat(gridmap.info.height, gridmap.info.width, CV_8UC1);
+    cv_pointscount=cv::Mat(gridmap.info.height, gridmap.info.width, CV_8UC1);
 
     for (int i = 0; i < gridmap.info.height; i++)
     {
         for (int j = 0; j < gridmap.info.width; j++)
         {
+            cv_gridmap.at<uint8_t>(i, j)=0;
+            cv_pointscount.at<uint8_t>(i, j)=0;
             if (maxheight[i][j] - minheight[i][j] > height_threshold_ && count[i][j] > count_threshold_)
             {
                 int index = j + i * gridmap.info.width;
                 gridmap.data[index] = 100;//(maxheight[i][j] - minheight[i][j]) * 100;
+                cv_gridmap.at<uint8_t>(i, j)=100; 
+                cv_pointscount.at<uint8_t>(i, j)=count[i][j];
             }
         }
     }
@@ -181,36 +190,116 @@ bool ElevationRasterization::CreateInitialMap(const CloudData::CLOUD_PTR& cloud_
     return true;
 }
 
-bool ElevationRasterization::Erode_Dilate(nav_msgs::OccupancyGrid &gridmap){
+bool ElevationRasterization::Erode_Dilate(cv::Mat &cv_gridmap){
+    cv::namedWindow("腐蚀膨胀之前地图", CV_WINDOW_NORMAL);
+    cv::imshow("腐蚀膨胀之前地图", cv_gridmap);
+    cv::waitKey(0);
 
-    cv::Mat ogm_mat = cv::Mat(gridmap.info.height, gridmap.info.width, CV_8UC1);
-    for (int i = 0; i < gridmap.info.height; i++)
-    {
-        for (int j = 0; j < gridmap.info.width; j++)
-        {
-            int index = j + i * gridmap.info.width;
-            ogm_mat.at<uint8_t>(i, j) = gridmap.data[index];
-        }
-    }
     //利用opencv进行腐蚀与膨胀
     cv::Mat erode_element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
-    cv::erode(ogm_mat, ogm_mat, erode_element);
+    cv::erode(cv_gridmap, cv_gridmap, erode_element);
 
-    cv::Mat dilate_element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2, 2));
-    cv::dilate(ogm_mat, ogm_mat, dilate_element);
+    cv::namedWindow("腐蚀后地图", CV_WINDOW_NORMAL);
+    cv::imshow("腐蚀后地图", cv_gridmap);
+    cv::waitKey(0);
 
-    for (int i = 0; i < gridmap.info.height; i++)
-    {
-        for (int j = 0; j < gridmap.info.width; j++)
-        {
-            int index = j + i * gridmap.info.width;
-            gridmap.data[index] = (ogm_mat.at<uint8_t>(i, j) > 100) ? 100 : ogm_mat.at<uint8_t>(i, j);
-        }
-    }
+    cv::Mat dilate_element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));
+    cv::dilate(cv_gridmap, cv_gridmap, dilate_element);
+
+    cv::namedWindow("膨胀后地图", CV_WINDOW_NORMAL);
+    cv::imshow("膨胀后地图", cv_gridmap);
+    cv::waitKey(0);
+
     return true;
 }
 
+void ElevationRasterization::AddFalseNegatives(cv::Mat& ogm_mat,int i,int j){
+    int count=0;
+
+    for (int col=i-1; col < i+2; col++)
+    {
+        for (int row=j-1; row< j+2; row++)
+        {
+            if (ogm_mat.at<uint8_t>(col, row)==100)
+            {
+                count ++;
+            }
+        }
+    }
+
+    if (count>=1)
+    {
+        ogm_mat.at<uint8_t>(i, j) =50;
+    }
+}
+
+void ElevationRasterization::RemoveOutliers(cv::Mat& ogm_mat,int i,int j){
+    int count=0;
+    for (int col=i-10; col < i+10; col++)
+    {
+        for (int row=j-10; row< j+10; row++)
+        {
+            if ((abs(col-i)+abs(row-j))==10)
+            {
+                if (ogm_mat.at<uint8_t>(col, row)==100)
+                {
+                    count ++;
+                }            
+            }
+        }
+    }
+
+    if (count<=3)
+    {
+        ogm_mat.at<uint8_t>(i, j) =0;
+    }
+}
+
+bool ElevationRasterization::Feature_Extraction(cv::Mat &cv_gridmap,cv::Mat &cv_pointscount){
+   
+    for (int i = 0; i < cv_gridmap.rows; i++)
+    {
+        for (int j = 0; j < cv_gridmap.cols; j++)
+        {
+            // if (cv_gridmap.at<uint8_t>(i, j) == 0&&(i>10)&&(i<cv_gridmap.rows-10)&&(j>10)&&(j<cv_gridmap.cols-10))
+            // {
+            //     if (cv_pointscount.at<uint8_t>(i, j)>=2)
+            //     {
+            //         AddFalseNegatives(cv_gridmap,i,j);
+            //     }
+            // }   
+
+            if (cv_gridmap.at<uint8_t>(i, j) == 100&&(i>15)&&(i<cv_gridmap.rows-15)&&(j>15)&&(j<cv_gridmap.cols-15))
+            {
+                RemoveOutliers(cv_gridmap,i,j);
+            }   
+        }
+    }
+
+    cv::namedWindow("去除离群点后地图", CV_WINDOW_NORMAL);
+    cv::imshow("去除离群点后地图", cv_gridmap);
+    cv::waitKey(0);
+
+    return true;
+}
+
+bool ElevationRasterization::WriteToGrid(const cv::Mat &cv_gridmap,nav_msgs::OccupancyGrid &gridmap){
+    LOG(INFO)<<"ElevationRasterization::WriteToGrid !!!! \n";
+    for (int i = 0; i < gridmap.info.height; i++)
+    {
+        for (int j = 0; j < gridmap.info.width; j++)
+        {
+            int index = j + i * gridmap.info.width;
+            gridmap.data[index] = (cv_gridmap.at<uint8_t>(i, j) > 100) ? 100 : cv_gridmap.at<uint8_t>(i, j);
+        }
+    }
+    LOG(INFO)<<"ElevationRasterization::WriteToGrid !!!! \n";
+    return true;
+}
+
+
 bool ElevationRasterization::InflateGradMap(const nav_msgs::OccupancyGrid &gridmap,nav_msgs::OccupancyGrid &inflated_gridmap){
+    LOG(INFO)<<"ElevationRasterization::InflateGradMap !!!! \n";
     inflated_gridmap.header.seq = 0;
     inflated_gridmap.header.stamp = ros::Time::now();
     inflated_gridmap.header.frame_id = "map";

@@ -33,7 +33,7 @@ bool Post_Processing::InitWithConfig() {
     InitParam(config_node);
     InitDataPath(config_node);
     InitFilter("map", map_filter_ptr_, config_node);
-    InitFilter("global_map", map_without_ground_filter_ptr_, config_node);
+    InitFilter("global_map", map_without_ground_filter_ptr_, config_node);//这个是被调用去除关键帧地面的
     InitFilter("global_map", post_map_without_ground_filter_ptr_, config_node);
     InitRasterization("global_map", map_rasterization_ptr_, config_node);
     global_map_with_out_ground_.reset(new CloudData::CLOUD());
