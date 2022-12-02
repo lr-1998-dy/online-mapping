@@ -3,7 +3,7 @@ root_dir1="/home/mdc/tool/grid_map_record"
  # @Author: lr 2012227985@qq.com
  # @Date: 2022-11-24 22:13:01
  # @LastEditors: lr 2012227985@qq.com
- # @LastEditTime: 2022-11-27 10:36:40
+ # @LastEditTime: 2022-12-02 15:10:28
  # @FilePath: /online-mapping/src/mapping.sh
  # @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 ### 
@@ -40,6 +40,12 @@ case $1 in
     pkill ros
     pkill rviz
     sleep 10
+    roslaunch remove remove.launch arg_json_file_path:=$grid_map_path
+   ;;
+    remove)
+    cd $root_dir1
+    source devel/setup.bash
+    echo -e "启动擦除障碍物程序"
     roslaunch remove remove.launch arg_json_file_path:=$grid_map_path
    ;;
 esac
