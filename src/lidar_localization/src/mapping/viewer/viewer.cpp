@@ -101,6 +101,7 @@ bool Viewer::InitFilter(std::string filter_user, std::shared_ptr<CloudFilterInte
 
     if (filter_mothod == "voxel_filter") {
         filter_ptr = std::make_shared<VoxelFilter>(config_node[filter_mothod][filter_user]);
+        return true;
     } 
 
     if (filter_mothod == "ground_filter") {

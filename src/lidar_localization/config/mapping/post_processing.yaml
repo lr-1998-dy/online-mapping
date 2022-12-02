@@ -32,6 +32,7 @@ elevation_rasterization:
     inflation_map_x : 150
     inflation_map_y : 150
     map_resolution: 1
+    outliers_dis: 25
 
 
 

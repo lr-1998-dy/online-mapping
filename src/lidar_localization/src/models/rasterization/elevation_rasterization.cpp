@@ -16,30 +16,33 @@ ElevationRasterization::ElevationRasterization(const YAML::Node& node,const std:
     int inflation_map_x = node["inflation_map_x"].as<int>();
     int inflation_map_y = node["inflation_map_y"].as<int>();
     float map_resolution=node["map_resolution"].as<float>();
+    float outliers_dis=node["outliers_dis"].as<float>();
 
     json_path_=map_path+"/global_map.json";
 
-    SetRasterizationParam(count_threshold, height_threshold, inflation_map_x, inflation_map_y,map_resolution);
+    SetRasterizationParam(count_threshold, height_threshold, inflation_map_x, inflation_map_y,map_resolution,outliers_dis);
 }
 
-ElevationRasterization::ElevationRasterization(int count_threshold,float height_threshold,int inflation_map_x,int inflation_map_y,float  map_resolution){
+ElevationRasterization::ElevationRasterization(int count_threshold,float height_threshold,int inflation_map_x,int inflation_map_y,float  map_resolution,float outliers_dis){
 
-    SetRasterizationParam(count_threshold, height_threshold, inflation_map_x, inflation_map_y,map_resolution);
+    SetRasterizationParam(count_threshold, height_threshold, inflation_map_x, inflation_map_y,map_resolution,outliers_dis);
 }
 
-bool ElevationRasterization::SetRasterizationParam(int count_threshold,float height_threshold,int inflation_map_x,int inflation_map_y,float  map_resolution){
+bool ElevationRasterization::SetRasterizationParam(int count_threshold,float height_threshold,int inflation_map_x,int inflation_map_y,float  map_resolution,float outliers_dis){
     count_threshold_=count_threshold;
     height_threshold_=height_threshold;
     inflation_map_x_=inflation_map_x;
     inflation_map_y_=inflation_map_y;
     map_resolution_=map_resolution;
+    outliers_dis_=outliers_dis;
 
     std::cout << "高程栅格化的参数为" << std::endl
               << "count_threshold_: " << count_threshold_ << ", "
               << "height_threshold_: " << height_threshold_ << ", "
               << "inflation_map_x_: " << inflation_map_x_ << ", "
               << "inflation_map_y_: " << inflation_map_y_ << ", "
-              << "map_resolution_: " << map_resolution_
+              << "map_resolution_: " << map_resolution_<<", "
+              <<"outliers_dis_: "<<outliers_dis_
               << std::endl << std::endl;
 
     return true;
@@ -61,8 +64,8 @@ bool ElevationRasterization::CreateGridMap(const CloudData::CLOUD_PTR& cloud_map
     cv::Mat cv_gridmap;
     cv::Mat cv_pointscount;
     CreateInitialMap(cloud_map,gridmap,cv_gridmap,cv_pointscount);
-    Erode_Dilate(cv_gridmap);
-    Feature_Extraction(cv_gridmap,cv_pointscount);
+    Erode(cv_gridmap);
+    Dilate(cv_gridmap);
     WriteToGrid(cv_gridmap,gridmap);
     InflateGradMap(gridmap,inflated_gridmap_);
     WriteToNewJson(inflated_gridmap_);
@@ -190,29 +193,6 @@ bool ElevationRasterization::CreateInitialMap(const CloudData::CLOUD_PTR& cloud_
     return true;
 }
 
-bool ElevationRasterization::Erode_Dilate(cv::Mat &cv_gridmap){
-    cv::namedWindow("腐蚀膨胀之前地图", CV_WINDOW_NORMAL);
-    cv::imshow("腐蚀膨胀之前地图", cv_gridmap);
-    cv::waitKey(0);
-
-    //利用opencv进行腐蚀与膨胀
-    cv::Mat erode_element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
-    cv::erode(cv_gridmap, cv_gridmap, erode_element);
-
-    cv::namedWindow("腐蚀后地图", CV_WINDOW_NORMAL);
-    cv::imshow("腐蚀后地图", cv_gridmap);
-    cv::waitKey(0);
-
-    cv::Mat dilate_element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));
-    cv::dilate(cv_gridmap, cv_gridmap, dilate_element);
-
-    cv::namedWindow("膨胀后地图", CV_WINDOW_NORMAL);
-    cv::imshow("膨胀后地图", cv_gridmap);
-    cv::waitKey(0);
-
-    return true;
-}
-
 void ElevationRasterization::AddFalseNegatives(cv::Mat& ogm_mat,int i,int j){
     int count=0;
 
@@ -235,11 +215,11 @@ void ElevationRasterization::AddFalseNegatives(cv::Mat& ogm_mat,int i,int j){
 
 void ElevationRasterization::RemoveOutliers(cv::Mat& ogm_mat,int i,int j){
     int count=0;
-    for (int col=i-10; col < i+10; col++)
+    for (int col=i-outliers_dis_; col < i+outliers_dis_; col++)
     {
-        for (int row=j-10; row< j+10; row++)
+        for (int row=j-outliers_dis_; row< j+outliers_dis_; row++)
         {
-            if ((abs(col-i)+abs(row-j))==10)
+            if ((abs(col-i)+abs(row-j))==outliers_dis_)
             {
                 if (ogm_mat.at<uint8_t>(col, row)==100)
                 {
@@ -255,20 +235,38 @@ void ElevationRasterization::RemoveOutliers(cv::Mat& ogm_mat,int i,int j){
     }
 }
 
-bool ElevationRasterization::Feature_Extraction(cv::Mat &cv_gridmap,cv::Mat &cv_pointscount){
-   
+bool ElevationRasterization::Erode(cv::Mat &cv_gridmap){
+    // cv::namedWindow("腐蚀膨胀之前地图", CV_WINDOW_NORMAL);
+    // cv::imshow("腐蚀膨胀之前地图", cv_gridmap);
+    // cv::waitKey(0);
+
+    //利用opencv进行腐蚀与膨胀
+    cv::Mat erode_element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2, 2));
+    cv::erode(cv_gridmap, cv_gridmap, erode_element);
+
+    // cv::namedWindow("腐蚀后地图", CV_WINDOW_NORMAL);
+    // cv::imshow("腐蚀后地图", cv_gridmap);
+    // cv::waitKey(0);
+
     for (int i = 0; i < cv_gridmap.rows; i++)
     {
         for (int j = 0; j < cv_gridmap.cols; j++)
         {
-            // if (cv_gridmap.at<uint8_t>(i, j) == 0&&(i>10)&&(i<cv_gridmap.rows-10)&&(j>10)&&(j<cv_gridmap.cols-10))
-            // {
-            //     if (cv_pointscount.at<uint8_t>(i, j)>=2)
-            //     {
-            //         AddFalseNegatives(cv_gridmap,i,j);
-            //     }
-            // }   
+            if (cv_gridmap.at<uint8_t>(i, j) == 100&&(i>outliers_dis_)&&(i<cv_gridmap.rows-outliers_dis_)&&(j>outliers_dis_)&&(j<cv_gridmap.cols-outliers_dis_))
+            {
+                RemoveOutliers(cv_gridmap,i,j);
+            }   
+        }
+    }
 
+    // cv::namedWindow("去除离群点后地图", CV_WINDOW_NORMAL);
+    // cv::imshow("去除离群点后地图", cv_gridmap);
+    // cv::waitKey(0);
+
+    for (int i = 0; i < cv_gridmap.rows; i++)
+    {
+        for (int j = 0; j < cv_gridmap.cols; j++)
+        {
             if (cv_gridmap.at<uint8_t>(i, j) == 100&&(i>15)&&(i<cv_gridmap.rows-15)&&(j>15)&&(j<cv_gridmap.cols-15))
             {
                 RemoveOutliers(cv_gridmap,i,j);
@@ -276,15 +274,44 @@ bool ElevationRasterization::Feature_Extraction(cv::Mat &cv_gridmap,cv::Mat &cv_
         }
     }
 
-    cv::namedWindow("去除离群点后地图", CV_WINDOW_NORMAL);
-    cv::imshow("去除离群点后地图", cv_gridmap);
-    cv::waitKey(0);
+    // cv::namedWindow("2次去除离群点后地图", CV_WINDOW_NORMAL);
+    // cv::imshow("2次去除离群点后地图", cv_gridmap);
+    // cv::waitKey(0);
+
+
+    return true;
+}
+
+bool ElevationRasterization::Dilate(cv::Mat &cv_gridmap){
+
+    cv::Mat dilate_element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));
+    cv::dilate(cv_gridmap, cv_gridmap, dilate_element);
+
+    // cv::namedWindow("膨胀后地图", CV_WINDOW_NORMAL);
+    // cv::imshow("膨胀后地图", cv_gridmap);
+    // cv::waitKey(0);
+
+    //未完待续
+    // for (int i = 0; i < cv_gridmap.rows; i++)
+    // {
+    //     for (int j = 0; j < cv_gridmap.cols; j++)
+    //     {
+    //         if (cv_gridmap.at<uint8_t>(i, j) == 100&&(i>15)&&(i<cv_gridmap.rows-15)&&(j>15)&&(j<cv_gridmap.cols-15))
+    //         {
+    //             RemoveOutliers(cv_gridmap,i,j);
+    //         }   
+    //     }
+    // }
+
+    // cv::namedWindow("去除离群点后地图", CV_WINDOW_NORMAL);
+    // cv::imshow("去除离群点后地图", cv_gridmap);
+    // cv::waitKey(0);
+
 
     return true;
 }
 
 bool ElevationRasterization::WriteToGrid(const cv::Mat &cv_gridmap,nav_msgs::OccupancyGrid &gridmap){
-    LOG(INFO)<<"ElevationRasterization::WriteToGrid !!!! \n";
     for (int i = 0; i < gridmap.info.height; i++)
     {
         for (int j = 0; j < gridmap.info.width; j++)
@@ -293,7 +320,6 @@ bool ElevationRasterization::WriteToGrid(const cv::Mat &cv_gridmap,nav_msgs::Occ
             gridmap.data[index] = (cv_gridmap.at<uint8_t>(i, j) > 100) ? 100 : cv_gridmap.at<uint8_t>(i, j);
         }
     }
-    LOG(INFO)<<"ElevationRasterization::WriteToGrid !!!! \n";
     return true;
 }
 
@@ -373,7 +399,7 @@ bool ElevationRasterization::WriteToNewJson(const nav_msgs::OccupancyGrid &infla
 
     for (int i = 0; i < (inflated_gridmap.info.width * inflated_gridmap.info.height); i++)
     {
-        if (inflated_gridmap.data[i]!=0)
+        if (inflated_gridmap.data[i]>20)
         {
             root["data"].append(i);
         }
