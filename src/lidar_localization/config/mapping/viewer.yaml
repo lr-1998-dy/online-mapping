@@ -1,6 +1,6 @@
 data_path: ./   # 数据存放路径
-# map_path: ./   # 地图存放路径,本电脑或者mdc上的路径
-map_path: /disk3/ConchFile/gridmap   # 地图存放路径,本电脑或者mdc上的路径
+map_path: ./   # 地图存放路径,本电脑或者mdc上的路径
+# map_path: /disk3/ConchFile/gridmap   # 地图存放路径,本电脑或者mdc上的路径
 
 #滤波参数
 # 全局地图
@@ -34,11 +34,12 @@ ground_filter:
 
 #生成栅格的相关参数
 elevation_rasterization:
-    count_threshold : 4
-    height_threshold : 0.3
+    count_threshold : 6
+    height_threshold : 0.35
     inflation_map_x : 150
     inflation_map_y : 150
     map_resolution: 1
-    outliers_dis: 20
+    outliers_dis: 15
+    bool_visual: true
 
 

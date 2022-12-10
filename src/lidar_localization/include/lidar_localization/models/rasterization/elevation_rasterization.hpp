@@ -19,13 +19,25 @@ namespace lidar_localization {
 class ElevationRasterization: public RasterizationInterface {
   public:
     ElevationRasterization(const YAML::Node& node,const std::string &key_frames_path_);
-    ElevationRasterization(int count_threshold,float height_threshold,int inflation_map_x,int inflation_map_y,float  map_resolution,float outliers_dis);
+    ElevationRasterization(int count_threshold,
+                                                    float height_threshold,
+                                                    int inflation_map_x,
+                                                    int inflation_map_y,
+                                                    float  map_resolution,
+                                                    float outliers_dis,
+                                                    bool bool_visual);
 
     bool CreateGridMap(const CloudData::CLOUD_PTR& cloud_map) override;
     nav_msgs::OccupancyGrid GetGridMap();
 
   private:
-    bool SetRasterizationParam(int count_threshold,float height_threshold,int inflation_map_x,int inflation_map_y,float  map_resolution,float outliers_dis);
+    bool SetRasterizationParam(int count_threshold,
+                                                                float height_threshold,
+                                                                int inflation_map_x,
+                                                                int inflation_map_y,
+                                                                float  map_resolution,
+                                                                float outliers_dis,
+                                                                bool bool_visual);
     bool CreateInitialMap(const CloudData::CLOUD_PTR& cloud_map,nav_msgs::OccupancyGrid &gridmap,cv::Mat &cv_gridmap,cv::Mat &cv_pointscount);
     bool Erode(cv::Mat &cv_gridmap);
     bool Dilate(cv::Mat &cv_gridmap);
@@ -43,6 +55,7 @@ class ElevationRasterization: public RasterizationInterface {
     int inflation_map_y_;
     float  map_resolution_;
     float  outliers_dis_;
+    bool  bool_visual_;
 
     nav_msgs::OccupancyGrid inflated_gridmap_;
     std::string json_path_;

@@ -17,24 +17,26 @@ ElevationRasterization::ElevationRasterization(const YAML::Node& node,const std:
     int inflation_map_y = node["inflation_map_y"].as<int>();
     float map_resolution=node["map_resolution"].as<float>();
     float outliers_dis=node["outliers_dis"].as<float>();
+    bool bool_visual=node["bool_visual"].as<bool>();
 
     json_path_=map_path+"/global_map.json";
 
-    SetRasterizationParam(count_threshold, height_threshold, inflation_map_x, inflation_map_y,map_resolution,outliers_dis);
+    SetRasterizationParam(count_threshold, height_threshold, inflation_map_x, inflation_map_y,map_resolution,outliers_dis,bool_visual);
 }
 
-ElevationRasterization::ElevationRasterization(int count_threshold,float height_threshold,int inflation_map_x,int inflation_map_y,float  map_resolution,float outliers_dis){
+ElevationRasterization::ElevationRasterization(int count_threshold,float height_threshold,int inflation_map_x,int inflation_map_y,float  map_resolution,float outliers_dis,bool bool_visual){
 
-    SetRasterizationParam(count_threshold, height_threshold, inflation_map_x, inflation_map_y,map_resolution,outliers_dis);
+    SetRasterizationParam(count_threshold, height_threshold, inflation_map_x, inflation_map_y,map_resolution,outliers_dis,bool_visual);
 }
 
-bool ElevationRasterization::SetRasterizationParam(int count_threshold,float height_threshold,int inflation_map_x,int inflation_map_y,float  map_resolution,float outliers_dis){
+bool ElevationRasterization::SetRasterizationParam(int count_threshold,float height_threshold,int inflation_map_x,int inflation_map_y,float  map_resolution,float outliers_dis,bool bool_visual){
     count_threshold_=count_threshold;
     height_threshold_=height_threshold;
     inflation_map_x_=inflation_map_x;
     inflation_map_y_=inflation_map_y;
     map_resolution_=map_resolution;
     outliers_dis_=outliers_dis;
+    bool_visual_=bool_visual;
 
     std::cout << "高程栅格化的参数为" << std::endl
               << "count_threshold_: " << count_threshold_ << ", "
@@ -236,18 +238,24 @@ void ElevationRasterization::RemoveOutliers(cv::Mat& ogm_mat,int i,int j){
 }
 
 bool ElevationRasterization::Erode(cv::Mat &cv_gridmap){
-    // cv::namedWindow("腐蚀膨胀之前地图", CV_WINDOW_NORMAL);
-    // cv::imshow("腐蚀膨胀之前地图", cv_gridmap);
-    // cv::waitKey(0);
-
+    if (bool_visual_)
+    {
+        cv::namedWindow("腐蚀膨胀之前地图", CV_WINDOW_NORMAL);
+        cv::imshow("腐蚀膨胀之前地图", cv_gridmap);
+        cv::waitKey(0);
+    }
+    
     //利用opencv进行腐蚀与膨胀
     cv::Mat erode_element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2, 2));
     cv::erode(cv_gridmap, cv_gridmap, erode_element);
 
-    // cv::namedWindow("腐蚀后地图", CV_WINDOW_NORMAL);
-    // cv::imshow("腐蚀后地图", cv_gridmap);
-    // cv::waitKey(0);
-
+    if (bool_visual_)
+    {
+        cv::namedWindow("腐蚀后地图", CV_WINDOW_NORMAL);
+        cv::imshow("腐蚀后地图", cv_gridmap);
+        cv::waitKey(0);
+    }
+    
     for (int i = 0; i < cv_gridmap.rows; i++)
     {
         for (int j = 0; j < cv_gridmap.cols; j++)
@@ -259,9 +267,12 @@ bool ElevationRasterization::Erode(cv::Mat &cv_gridmap){
         }
     }
 
-    // cv::namedWindow("去除离群点后地图", CV_WINDOW_NORMAL);
-    // cv::imshow("去除离群点后地图", cv_gridmap);
-    // cv::waitKey(0);
+    if (bool_visual_)
+    {
+        cv::namedWindow("去除离群点后地图", CV_WINDOW_NORMAL);
+        cv::imshow("去除离群点后地图", cv_gridmap);
+        cv::waitKey(0);
+    }
 
     for (int i = 0; i < cv_gridmap.rows; i++)
     {
@@ -274,22 +285,45 @@ bool ElevationRasterization::Erode(cv::Mat &cv_gridmap){
         }
     }
 
-    // cv::namedWindow("2次去除离群点后地图", CV_WINDOW_NORMAL);
-    // cv::imshow("2次去除离群点后地图", cv_gridmap);
-    // cv::waitKey(0);
+    if (bool_visual_)
+    {
+        cv::namedWindow("2次去除离群点后地图", CV_WINDOW_NORMAL);
+        cv::imshow("2次去除离群点后地图", cv_gridmap);
+        cv::waitKey(0);
+    }
 
+    for (int i = 0; i < cv_gridmap.rows; i++)
+    {
+        for (int j = 0; j < cv_gridmap.cols; j++)
+        {
+            if (cv_gridmap.at<uint8_t>(i, j) == 100&&(i>15)&&(i<cv_gridmap.rows-15)&&(j>15)&&(j<cv_gridmap.cols-15))
+            {
+                RemoveOutliers(cv_gridmap,i,j);
+            }   
+        }
+    }
+
+    if (bool_visual_)
+    {
+        cv::namedWindow("3次去除离群点后地图", CV_WINDOW_NORMAL);
+        cv::imshow("3次去除离群点后地图", cv_gridmap);
+        cv::waitKey(0);
+    }
 
     return true;
 }
 
 bool ElevationRasterization::Dilate(cv::Mat &cv_gridmap){
 
-    cv::Mat dilate_element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));
+    cv::Mat dilate_element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2, 2));
     cv::dilate(cv_gridmap, cv_gridmap, dilate_element);
 
-    // cv::namedWindow("膨胀后地图", CV_WINDOW_NORMAL);
-    // cv::imshow("膨胀后地图", cv_gridmap);
-    // cv::waitKey(0);
+    if (bool_visual_)
+    {
+        cv::namedWindow("膨胀后地图", CV_WINDOW_NORMAL);
+        cv::imshow("膨胀后地图", cv_gridmap);
+        cv::waitKey(0);
+    }
 
     //未完待续
     // for (int i = 0; i < cv_gridmap.rows; i++)
@@ -302,11 +336,6 @@ bool ElevationRasterization::Dilate(cv::Mat &cv_gridmap){
     //         }   
     //     }
     // }
-
-    // cv::namedWindow("去除离群点后地图", CV_WINDOW_NORMAL);
-    // cv::imshow("去除离群点后地图", cv_gridmap);
-    // cv::waitKey(0);
-
 
     return true;
 }

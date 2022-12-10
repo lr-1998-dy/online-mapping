@@ -271,7 +271,7 @@ bool Viewer::GetLocalMap(CloudData::CLOUD_PTR& local_map_ptr) {
 
 bool Viewer::GetGlobalMap(CloudData::CLOUD_PTR& global_map_ptr,nav_msgs::OccupancyGrid& inflated_gridmap) {
     JointGlobalMap(global_map_ptr);
-    global_map_filter_ptr_->Filter(global_map_ptr, global_map_ptr);
+    // global_map_filter_ptr_->Filter(global_map_ptr, global_map_ptr);
     map_rasterization_ptr_->CreateGridMap(global_map_ptr);
     inflated_gridmap=map_rasterization_ptr_->GetGridMap();
     return true;

@@ -1,19 +1,19 @@
 root_dir1="/home/mdc/tool/grid_map_record"
-###
- # @Author: lr 2012227985@qq.com
- # @Date: 2022-11-24 22:13:01
- # @LastEditors: lr 2012227985@qq.com
- # @LastEditTime: 2022-12-02 15:10:28
- # @FilePath: /online-mapping/src/mapping.sh
- # @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
-### 
+root_dir2="/disk3/data/"
+
 child_dir=$(date +%Y%m%d)
+bag_dir=$root_dir2$child_dir
 data_map_path="/disk3/ConchFile/gridmap/"
 grid_map_path=$data_map_path$child_dir"/global_map.json"
 file_path="/home/mdc/tool/grid_map_record/src/lidar_localization/time.txt"
 
+lidar_topic="/lidar_aeb/raw_points"
+imu_topic="/imu_data"
+
 case $1 in
     pointcloud)
+    cd $bag_dir
+    rosbag record $lidar_topic $imu_topic &
     cd $root_dir1
     source devel/setup.bash
     rm -rf $file_path

@@ -1,8 +1,8 @@
 # 匹配
 # registration_method: NDT   # 选择点云匹配方法，目前支持：NDT 
-# registration_method: NDT-OMP   # 选择点云匹配方法，目前支持：NDT-OMP
+registration_method: NDT-OMP   # 选择点云匹配方法，目前支持：NDT-OMP
 # registration_method: NDT-IRLS   # 选择点云匹配方法，目前支持：NDT-OMP
-registration_method: ICP
+# registration_method: ICP
 
 prior_information: GNSS   # 选择点云匹配先验信息，目前支持：GNSS 
 # prior_information: Predict   # 选择点云匹配先验信息，目前支持：GNSS 
@@ -20,7 +20,6 @@ frame_filter: voxel_filter # 选择当前帧点云滤波方法，目前支持：
 key_frame_distance: 7.0 # 关键帧距离
 local_frame_num: 5
 local_map_filter: voxel_filter # 选择滑窗地图点云滤波方法，目前支持：voxel_filter、no_filter
-
 
 # 各配置选项对应参数
 ## 匹配相关参数

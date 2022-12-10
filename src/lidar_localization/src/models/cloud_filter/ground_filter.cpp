@@ -2,7 +2,7 @@
  * @Description: 删除地面点
  * @Autor: Li Rui
  * @Date: 2022-09-04 13:36:47
- * @LastEditTime: 2022-09-07 21:42:25
+ * @LastEditTime: 2022-12-07 19:23:25
  */
 #include "lidar_localization/models/cloud_filter/ground_filter.hpp"
 
@@ -25,8 +25,10 @@ GroundFilter::GroundFilter(bool opt_coeff, float dist_threshold, int  max_iter) 
 bool GroundFilter::SetFilterParam(bool opt_coeff, float dist_threshold, int  max_iter) {
     ground_filter_.setOptimizeCoefficients(opt_coeff);
     ground_filter_.setModelType(pcl::SACMODEL_PLANE);
+    ground_filter_.setMethodType(pcl::SAC_RANSAC);
     ground_filter_.setMaxIterations(max_iter);
     ground_filter_.setDistanceThreshold(dist_threshold);
+
 
     LOG(INFO) << "Ground Filter 的参数为：" << std::endl
               << opt_coeff << ", "

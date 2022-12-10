@@ -17,6 +17,9 @@
 #include "lidar_localization/global_defination/global_defination.h"
 #include "lidar_localization/models/cloud_filter/voxel_filter.hpp"
 #include "lidar_localization/models/cloud_filter/ground_filter.hpp"
+#include "lidar_localization/models/cloud_filter/outliers_filter.hpp"
+#include "lidar_localization/models/cloud_filter/ground_filter_with_normal.hpp"
+#include "lidar_localization/models/cloud_filter/ground_filter_with_grid.hpp"
 #include "lidar_localization/tools/print_info.hpp"
 #include"lidar_localization/models/rasterization/elevation_rasterization.hpp"
 #include <lidar_localization/tools/file_manager.hpp>
@@ -34,7 +37,8 @@ bool Post_Processing::InitWithConfig() {
     InitDataPath(config_node);
     InitFilter("map", map_filter_ptr_, config_node);
     InitFilter("global_map", map_without_ground_filter_ptr_, config_node);//这个是被调用去除关键帧地面的
-    InitFilter("global_map", post_map_without_ground_filter_ptr_, config_node);
+    InitFilter("global_map_outlier", map_outlier_filter_ptr_, config_node);//这个是被调用去除关键帧地面的
+    InitFilter("post_map", post_map_without_ground_filter_ptr_, config_node);
     InitRasterization("global_map", map_rasterization_ptr_, config_node);
     global_map_with_out_ground_.reset(new CloudData::CLOUD());
     return true;
@@ -100,6 +104,7 @@ bool Post_Processing::InitDataPath(const YAML::Node& config_node) {
     return true;
 }
 
+
 bool Post_Processing::InitFilter(std::string filter_user, std::shared_ptr<CloudFilterInterface>& filter_ptr, const YAML::Node& config_node) {
     std::string filter_mothod = config_node[filter_user + "_filter"].as<std::string>();
     std::cout << "闭环的" << filter_user << "选择的滤波方法为：" << filter_mothod << std::endl;
@@ -111,6 +116,21 @@ bool Post_Processing::InitFilter(std::string filter_user, std::shared_ptr<CloudF
 
     if (filter_mothod == "ground_filter") {
         filter_ptr = std::make_shared<GroundFilter>(config_node[filter_mothod]);
+        return true;
+    } 
+
+    if (filter_mothod == "ground_filter_with_normal") {
+        filter_ptr = std::make_shared<NormalGroundFilter>(config_node[filter_mothod]);
+        return true;
+    } 
+
+    if (filter_mothod == "ground_filter_with_grid") {
+        filter_ptr = std::make_shared<GridGroundFilter>(config_node[filter_mothod]);
+        return true;
+    } 
+
+    if (filter_mothod == "outlier_filter") {
+        filter_ptr = std::make_shared<OutliersFilter>(config_node[filter_mothod]);
         return true;
     } 
 
@@ -185,12 +205,27 @@ bool Post_Processing::Update(std::deque<KeyFrame>  key_frame_buff_) {
  */
 bool Post_Processing::SaveKeyCloud(int id,CloudData::CLOUD_PTR cloud_ptr) {
         CloudData::CLOUD_PTR cloud_out_ptr(new CloudData::CLOUD());
+        CloudData::CLOUD_PTR cloud_out2_ptr(new CloudData::CLOUD());
+        CloudData::CLOUD_PTR cloud_outlier_ptr(new CloudData::CLOUD());
         std::string file_path = key_frames_path_ +"/key_frames/"+  "key_frame_"+std::to_string(id)+".pcd";
         pcl::io::loadPCDFile(file_path, *cloud_ptr);
-        map_without_ground_filter_ptr_->Filter(cloud_ptr,cloud_out_ptr);
 
+        map_without_ground_filter_ptr_->Filter(cloud_ptr,cloud_out_ptr);
         std::string post_file_path = key_frames_path_ +"/post_key_frames/"+ "post_key_frame_"+std::to_string(id)+".pcd" ;
         pcl::io::savePCDFileBinary(post_file_path, *cloud_out_ptr);    
+
+        // post_map_without_ground_filter_ptr_->Filter(cloud_out_ptr,cloud_out2_ptr);
+        // std::string post2_file_path = key_frames_path_ +"/post2_key_frames/"+ "post2_key_frame_"+std::to_string(id)+".pcd" ;
+        // pcl::io::savePCDFileBinary(post2_file_path, *cloud_out2_ptr);    
+
+        // std::string post_file_path = key_frames_path_ +"/post_key_frames/"+ "post_key_frame_"+std::to_string(id)+".pcd" ;
+        // pcl::io::savePCDFileBinary(post_file_path, *cloud_out2_ptr);    
+
+        //存储的数据
+        // map_outlier_filter_ptr_->Filter(cloud_out2_ptr,cloud_outlier_ptr);
+        // std::string post_outlier_file_path = key_frames_path_ +"/outlier_key_frames/"+ "outlier_key_frame_"+std::to_string(id)+".pcd" ;
+        // pcl::io::savePCDFileBinary(post_outlier_file_path, *cloud_outlier_ptr);    
+
         return true;
 }
 

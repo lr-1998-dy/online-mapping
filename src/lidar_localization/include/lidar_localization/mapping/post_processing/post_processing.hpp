@@ -1,6 +1,6 @@
 /*
  * @Author: Li Rui
- * @LastEditTime: 2022-11-03 15:11:54
+ * @LastEditTime: 2022-12-07 21:04:25
  * @LastEditors: lr 2012227985@qq.com
  * @Description: 获得被优化之后的位姿信息，后处理点云，存储点云，生成全局地图
  */
@@ -55,6 +55,7 @@ class Post_Processing {
 
     std::shared_ptr<CloudFilterInterface> map_filter_ptr_;
     std::shared_ptr<CloudFilterInterface> map_without_ground_filter_ptr_;
+    std::shared_ptr<CloudFilterInterface> map_outlier_filter_ptr_;
     std::shared_ptr<CloudFilterInterface> post_map_without_ground_filter_ptr_;
 
     std::deque<KeyFrame> all_key_frames_;
