@@ -2,7 +2,7 @@
  * @Description: 利用栅格单帧删除地面点
  * @Autor: Li Rui
  * @Date: 2022-09-04 13:36:47
- * @LastEditTime: 2022-12-09 16:10:57
+ * @LastEditTime: 2022-12-11 20:40:18
  */
 
 #include "lidar_localization/models/cloud_filter/ground_filter_with_grid.hpp"
@@ -157,9 +157,14 @@ bool GridGroundFilter::WriteToCloud(const CloudData::CLOUD_PTR& input_cloud_ptr,
        
         filtered_cloud_ptr->points.push_back(input_cloud_ptr->points[i]);
 
-        // if (ogm_mat.at<uint8_t>(y, x)==100)
-        // {
-        // }
+        for (size_t i = 0; i < count; i++)
+        {
+            if (ogm_mat.at<uint8_t>(y, x)==100)
+            {
+                
+            }
+        }
+        
         
     }
     return true;

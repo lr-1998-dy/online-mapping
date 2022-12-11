@@ -15,6 +15,7 @@
 #include "lidar_localization/sensor_data/pose_data.hpp"
 
 #include "lidar_localization/models/cloud_filter/voxel_filter.hpp"
+#include "lidar_localization/models/cloud_filter/cloud_filter_interface.hpp"
 #include "lidar_localization/models/rasterization/rasterization_interface.hpp"
 
 #include <nav_msgs/OccupancyGrid.h>
@@ -74,6 +75,7 @@ class Viewer {
     CloudData optimized_cloud_;
     std::deque<KeyFrame> optimized_key_frames_;
     std::deque<KeyFrame> all_key_frames_;
+
 
     bool has_new_global_map_ = false;
     bool has_new_local_map_ = false;

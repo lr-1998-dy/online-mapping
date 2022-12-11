@@ -14,6 +14,10 @@
 #include "lidar_localization/global_defination/global_defination.h"
 #include"lidar_localization/models/rasterization/elevation_rasterization.hpp"
 #include "lidar_localization/models/cloud_filter/ground_filter.hpp"
+#include "lidar_localization/models/cloud_filter/outliers_filter.hpp"
+#include "lidar_localization/models/cloud_filter/ground_filter_with_normal.hpp"
+#include "lidar_localization/models/cloud_filter/ground_filter_with_grid.hpp"
+
 
 #define SAVE_MAP 1
 #define SAVE_POST_MAP 0
@@ -66,7 +70,6 @@ std::string Viewer::GetDate(){
     return date;
 }
 
-
 bool Viewer::InitDataPath(const YAML::Node& config_node) {
     std::string data_path = config_node["data_path"].as<std::string>();
     std::string map_path = config_node["map_path"].as<std::string>();
@@ -92,6 +95,9 @@ bool Viewer::InitDataPath(const YAML::Node& config_node) {
     if (!FileManager::InitDirectory(map_path_, "点云地图文件"))
         return false;
 
+    if (!FileManager::InitDirectory(data_path + "/slam_data/post_key_frames","后处理之后的点云"))
+        return false;
+
     return true;
 }
 
@@ -108,6 +114,22 @@ bool Viewer::InitFilter(std::string filter_user, std::shared_ptr<CloudFilterInte
         filter_ptr = std::make_shared<GroundFilter>(config_node[filter_mothod]);
         return true;
     } 
+
+    if (filter_mothod == "ground_filter_with_normal") {
+        filter_ptr = std::make_shared<NormalGroundFilter>(config_node[filter_mothod]);
+        return true;
+    } 
+
+    if (filter_mothod == "ground_filter_with_grid") {
+        filter_ptr = std::make_shared<GridGroundFilter>(config_node[filter_mothod]);
+        return true;
+    } 
+
+    if (filter_mothod == "outlier_filter") {
+        filter_ptr = std::make_shared<OutliersFilter>(config_node[filter_mothod]);
+        return true;
+    } 
+
 
     LOG(ERROR) << "没有为 " << filter_user << " 找到与 " << filter_mothod << " 相对应的滤波方法!";
     return false;
@@ -218,12 +240,20 @@ bool Viewer::JointCloudMap(const std::deque<KeyFrame>& key_frames, CloudData::CL
         if (save_map==1)
         {
             file_path = key_frames_path_ + "/key_frame_" + std::to_string(key_frames.at(i).index) + ".pcd";
+            pcl::io::loadPCDFile(file_path, *cloud_ptr);
+            pcl::transformPointCloud(*cloud_ptr, *cloud_ptr, key_frames.at(i).pose);
+            *map_cloud_ptr += *cloud_ptr;
         }else{
-            file_path = post_key_frames_path_ + "/post_key_frame_" + std::to_string(key_frames.at(i).index) + ".pcd";
+            CloudData::CLOUD_PTR cloud_out_ptr(new CloudData::CLOUD());
+            file_path = key_frames_path_ + "/key_frame_" + std::to_string(key_frames.at(i).index) + ".pcd";
+            pcl::io::loadPCDFile(file_path, *cloud_ptr);
+            pcl::transformPointCloud(*cloud_ptr, *cloud_ptr, key_frames.at(i).pose);
+            global_map_ground_filter_ptr_->Filter(cloud_ptr,cloud_out_ptr);
+            
+            std::string post_file_path = post_key_frames_path_ + "/post_key_frame_" + std::to_string(key_frames.at(i).index) + ".pcd";
+            pcl::io::savePCDFileBinary(post_file_path, *cloud_out_ptr);
+            *map_cloud_ptr += *cloud_out_ptr;
         }
-        pcl::io::loadPCDFile(file_path, *cloud_ptr);
-        pcl::transformPointCloud(*cloud_ptr, *cloud_ptr, key_frames.at(i).pose);
-        *map_cloud_ptr += *cloud_ptr;
     }
     return true;
 }

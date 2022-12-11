@@ -86,7 +86,7 @@ bool Post_Processing::InitDataPath(const YAML::Node& config_node) {
         map_path_=map_path+"/"+GetDate();
     }
 
-    //保证所依赖的文件夹在次之前就建好了
+    //保证所依赖的文件夹在此之前就建好了
     while (!(FileManager::IsDirectory(key_frames_path_)&&FileManager::IsDirectory(key_frames_path)))
     {
         sleep(1);
