@@ -2,7 +2,7 @@
  * @Description: 删除地面点
  * @Autor: Li Rui
  * @Date: 2022-09-04 13:36:47
- * @LastEditTime: 2022-12-08 00:29:17
+ * @LastEditTime: 2022-12-11 08:52:35
  */
 #include "lidar_localization/models/cloud_filter/ground_filter_with_normal.hpp"
 
@@ -142,7 +142,7 @@ bool NormalGroundFilter::Filter(const CloudData::CLOUD_PTR& input_cloud_ptr, Clo
         seg.setOptimizeCoefficients(true);
         seg.setModelType(pcl::SACMODEL_PLANE);
         seg.setMaxIterations(10000);
-        double Threshold=0.3+attach;
+        double Threshold=0.4+attach;
         // double Threshold=0.35;
         // double Threshold=0.3;
         // std::cout<<"Threshold: "<<Threshold<<"\n";
