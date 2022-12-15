@@ -10,6 +10,8 @@ global_map_filter: voxel_filter # 选择全局地图点云滤波方法，目前�
 global_map_ground_filter: ground_filter_with_normal
 # global_map_ground_filter: ground_filter_with_grid
 
+global_map_ground_grid_filter: ground_filter_with_grid
+
 # 局部地图
 local_frame_num: 20
 local_map_filter: voxel_filter # 选择滑窗小地图点云滤波方法，目前支持：voxel_filter
@@ -38,7 +40,7 @@ ground_filter:
 outlier_filter:
     filter_radius : 1.5
     filter_count : 8
-# 利用法向量做地面滤除的相关参数
+# 利用法向量做地面滤除的相关参数 
 ground_filter_with_normal:
     opt_coeff : 1
     dist_threshold : 0.45
@@ -47,7 +49,7 @@ ground_filter_with_normal:
 ground_filter_with_grid:
     count_threshold : 3
     height_threshold : 0.2
-    map_resolution: 0.3
+    map_resolution: 0.5
 
 #生成栅格的相关参数
 elevation_rasterization:
@@ -56,7 +58,7 @@ elevation_rasterization:
     inflation_map_x : 150
     inflation_map_y : 150
     map_resolution: 1
-    outliers_dis: 15
+    outliers_dis: 12
     bool_visual: true
 
 

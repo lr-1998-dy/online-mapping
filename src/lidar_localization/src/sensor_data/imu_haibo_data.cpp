@@ -34,6 +34,10 @@ void IMUHaiboData::GetENUPosition(){
                 Eigen::AngleAxisd(euler_angles.roll * torad_, Eigen::Vector3d::UnitY()) *
                 Eigen::AngleAxisd(euler_angles.pitch * torad_, Eigen::Vector3d::UnitX());
 
+    // matrix = Eigen::AngleAxisd(euler_angles.yall * torad_, Eigen::Vector3d::UnitZ()) *
+    //             Eigen::AngleAxisd(0 * torad_, Eigen::Vector3d::UnitY()) *
+    //             Eigen::AngleAxisd(0 * torad_, Eigen::Vector3d::UnitX());
+
     orientation=matrix.inverse();
     
     geo_converter.Forward(llh.lat, llh.lon, llh.alt, position[0], position[1],position[2]);

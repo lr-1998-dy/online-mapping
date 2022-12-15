@@ -2,7 +2,7 @@
  * @Description: 利用栅格单帧删除地面点
  * @Autor: Li Rui
  * @Date: 2022-09-04 13:36:47
- * @LastEditTime: 2022-12-11 20:40:18
+ * @LastEditTime: 2022-12-15 09:10:35
  */
 
 #include "lidar_localization/models/cloud_filter/ground_filter_with_grid.hpp"
@@ -79,14 +79,15 @@ bool GridGroundFilter::CreateInitialMap(const CloudData::CLOUD_PTR& input_cloud_
 
     x_min_=x_min;
     y_min_=y_min;
-    int ogm_mat_width=int((x_max - x_min) / map_resolution_)+1;
-    int ogm_mat_height=int((y_max - y_min) / map_resolution_)+1;
+    int ogm_mat_width=int((x_max - x_min) / map_resolution_)+10;
+    int ogm_mat_height=int((y_max - y_min) / map_resolution_)+10;
     ogm_mat=cv::Mat(ogm_mat_height, ogm_mat_width, CV_8UC1);
 
     //initialize the two vectors
     cv::Mat maxheight(ogm_mat_height, ogm_mat_width, CV_8UC1);
     cv::Mat minheight(ogm_mat_height, ogm_mat_width, CV_8UC1);
     cv::Mat count(ogm_mat_height, ogm_mat_width, CV_8UC1);
+    cv::Mat occupy_mat(ogm_mat_height, ogm_mat_width, CV_8UC1);
 
     // std::vector<std::vector<float>> maxheight(ogm_mat_height);
     // std::vector<std::vector<float>> minheight(ogm_mat_height);
@@ -103,6 +104,7 @@ bool GridGroundFilter::CreateInitialMap(const CloudData::CLOUD_PTR& input_cloud_
             maxheight.at<uint8_t>(i, j)= std::numeric_limits<float>::min();
             minheight.at<uint8_t>(i, j)= std::numeric_limits<float>::max();
             count.at<uint8_t>(i, j)= 0;
+            occupy_mat.at<uint8_t>(i, j)= 0;
         }
     }
 
@@ -136,13 +138,63 @@ bool GridGroundFilter::CreateInitialMap(const CloudData::CLOUD_PTR& input_cloud_
                 ogm_mat.at<uint8_t>(i, j)=100; 
                 count_cv++;
             }
+
+            if (count.at<uint8_t>(i, j)>= (count_threshold_+2)&&maxheight.at<uint8_t>(i, j) - minheight.at<uint8_t>(i, j) >= (height_threshold_+0.03))
+            {
+                occupy_mat.at<uint8_t>(i, j)=100;
+            }
+
         }
     }
 
-    // cv::namedWindow("腐蚀膨胀之前地图", CV_WINDOW_NORMAL);
-    // cv::imshow("腐蚀膨胀之前地图", ogm_mat);
-    // cv::waitKey(0);
+    // for (int i = 0; i < input_cloud_ptr->points.size(); i++)
+    // {
+    //     int x = int((input_cloud_ptr->points[i].x - x_min) / map_resolution_);
+    //     int y = int((input_cloud_ptr->points[i].y - y_min) / map_resolution_);
+    //     {
 
+    for (int y = 0; y < ogm_mat_height; y++)
+    {
+        for (int x = 0; x < ogm_mat_width; x++)
+        {
+            
+            if(ogm_mat.at<uint8_t>(y, x)==0)
+            {
+                int occupy_count=0;
+                for (int col=y-7; col < y+7; col++)
+                {
+                    if (col<0)
+                    {
+                        continue;
+                    }
+                    for (int row=x-7; row< x+7; row++)
+                    {
+                        if (row<0)
+                        {
+                            continue;
+                        }
+
+                        if (ogm_mat.at<uint8_t>(col, row)==100)
+                        {
+                            occupy_count++;
+                        }
+                    }
+                }
+                if (occupy_count>=3)
+                {
+                    ogm_mat.at<uint8_t>(y, x)=100;
+                }
+                occupy_count=0;
+            }
+
+            if (occupy_mat.at<uint8_t>(y, x)==100)
+            {
+                ogm_mat.at<uint8_t>(y, x)=100; 
+            }
+        }
+    }
+    
+    
     LOG(ERROR) << "error "<<count_cv;
 
     return true;
@@ -155,19 +207,11 @@ bool GridGroundFilter::WriteToCloud(const CloudData::CLOUD_PTR& input_cloud_ptr,
         int x = int((input_cloud_ptr->points[i].x - x_min_) / map_resolution_);
         int y = int((input_cloud_ptr->points[i].y - y_min_) / map_resolution_);
        
-        filtered_cloud_ptr->points.push_back(input_cloud_ptr->points[i]);
-
-        for (size_t i = 0; i < count; i++)
-        {
-            if (ogm_mat.at<uint8_t>(y, x)==100)
-            {
-                
-            }
+        if (ogm_mat.at<uint8_t>(y, x)==100){
+            filtered_cloud_ptr->points.push_back(input_cloud_ptr->points[i]);
         }
-        
-        
     }
-    return true;
-}
+        return true;   
+    }
 
 } 

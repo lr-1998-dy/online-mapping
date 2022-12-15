@@ -2,7 +2,7 @@
  * @Description: 删除地面点
  * @Autor: Li Rui
  * @Date: 2022-09-04 13:36:47
- * @LastEditTime: 2022-12-11 08:52:35
+ * @LastEditTime: 2022-12-14 10:30:22
  */
 #include "lidar_localization/models/cloud_filter/ground_filter_with_normal.hpp"
 
@@ -57,11 +57,11 @@ bool NormalGroundFilter::SetFilterParam(bool opt_coeff, float dist_threshold, in
 }
 
 CloudData::CLOUD_PTR NormalGroundFilter::normal_filtering(const CloudData::CLOUD_PTR& cloud)  {
-    pcl::NormalEstimation<pcl::PointXYZI, pcl::Normal> ne;
+    pcl::NormalEstimation<CloudData::POINT, pcl::Normal> ne;
     ne.setInputCloud(cloud);
 
     double normal_filter_thresh=55;
-    pcl::search::KdTree<CloudData::POINT>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZI>);
+    pcl::search::KdTree<CloudData::POINT>::Ptr tree(new pcl::search::KdTree<CloudData::POINT>);
     ne.setSearchMethod(tree);
 
     pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
@@ -90,8 +90,8 @@ CloudData::CLOUD_PTR NormalGroundFilter::normal_filtering(const CloudData::CLOUD
 CloudData::CLOUD_PTR NormalGroundFilter::hill_points(const CloudData::CLOUD_PTR& cloud,const CloudData::CLOUD_PTR& cloud_ground){
 
     CloudData::CLOUD_PTR cloud_hill(new CloudData::CLOUD());
-    pcl::KdTreeFLANN<pcl::PointXYZI>::Ptr kdtreeGround;
-    kdtreeGround.reset(new pcl::KdTreeFLANN<pcl::PointXYZI>());
+    pcl::KdTreeFLANN<CloudData::POINT>::Ptr kdtreeGround;
+    kdtreeGround.reset(new pcl::KdTreeFLANN<CloudData::POINT>());
     kdtreeGround->setInputCloud(cloud_ground);
 
     for(int i=0;i<cloud->points.size();i++)
@@ -100,7 +100,7 @@ CloudData::CLOUD_PTR NormalGroundFilter::hill_points(const CloudData::CLOUD_PTR&
         std::vector<int> pointNotRepeate;
         std::vector<float> pointSearchSqDis;
 
-        pcl::PointXYZI point = cloud->points[i]; // 初始化一个查询点
+        CloudData::POINT point = cloud->points[i]; // 初始化一个查询点
         kdtreeGround->radiusSearch(point,0.5,pointSearchInd,pointSearchSqDis);
 
         if(pointSearchInd.size()==0)
@@ -122,7 +122,7 @@ bool NormalGroundFilter::Filter(const CloudData::CLOUD_PTR& input_cloud_ptr, Clo
 
         double heightThreshold=1.5;
         double attach=0.05;
-        pcl::PassThrough<pcl::PointXYZI> passthrough;
+        pcl::PassThrough<CloudData::POINT> passthrough;
         //在使用ransac之前先把山体的点尽可能去掉
         Eigen::Vector4f centroid;					// 现在的地图的质心
         pcl::compute3DCentroid(*input_cloud_ptr, centroid);	// 齐次坐标
@@ -138,7 +138,7 @@ bool NormalGroundFilter::Filter(const CloudData::CLOUD_PTR& input_cloud_ptr, Clo
         pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
         pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
 
-        pcl::SACSegmentation<pcl::PointXYZI> seg;
+        pcl::SACSegmentation<CloudData::POINT> seg;
         seg.setOptimizeCoefficients(true);
         seg.setModelType(pcl::SACMODEL_PLANE);
         seg.setMaxIterations(10000);
@@ -168,7 +168,7 @@ bool NormalGroundFilter::Filter(const CloudData::CLOUD_PTR& input_cloud_ptr, Clo
         cloud_tmp=hill_points(input_cloud_ptr,cloud_ground);
 
         //取逆，然后找到和地面点相反的点，从而起到去除的效果
-        // pcl::ExtractIndices<pcl::PointXYZI> extractor;
+        // pcl::ExtractIndices<CloudData::POINT> extractor;
         // extractor.setInputCloud(input_cloud_ptr);
         // extractor.setIndices(inliers);
         // extractor.setNegative(true);
@@ -176,7 +176,7 @@ bool NormalGroundFilter::Filter(const CloudData::CLOUD_PTR& input_cloud_ptr, Clo
         // extractor.filter(*cloud_filtered);
 
         //use the radiusoutler filter to remove some outliers
-        pcl::RadiusOutlierRemoval<pcl::PointXYZI> radiusoutlier;
+        pcl::RadiusOutlierRemoval<CloudData::POINT> radiusoutlier;
         radiusoutlier.setInputCloud(cloud_tmp);
         // radiusoutlier.setInputCloud(cloud_Remove_hill);
         float filter_radius=0.6;

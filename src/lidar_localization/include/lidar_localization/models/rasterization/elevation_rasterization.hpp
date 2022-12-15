@@ -38,10 +38,14 @@ class ElevationRasterization: public RasterizationInterface {
                                                                 float  map_resolution,
                                                                 float outliers_dis,
                                                                 bool bool_visual);
-    bool CreateInitialMap(const CloudData::CLOUD_PTR& cloud_map,nav_msgs::OccupancyGrid &gridmap,cv::Mat &cv_gridmap,cv::Mat &cv_pointscount);
+    bool CreateInitialMap(const CloudData::CLOUD_PTR& cloud_map,
+                                                  nav_msgs::OccupancyGrid &gridmap,
+                                                  cv::Mat &cv_gridmap,
+                                                  cv::Mat &cv_pointscount,
+                                                  cv::Mat &cv_occupy);
     bool Erode(cv::Mat &cv_gridmap);
-    bool Dilate(cv::Mat &cv_gridmap);
-    void AddFalseNegatives(cv::Mat& ogm_mat,int i,int j);
+    bool Dilate(cv::Mat &cv_gridmap,const cv::Mat &cv_occupy);
+    void AddFalseNegatives(const CloudData::CLOUD_PTR& cloud_map,cv::Mat& ogm_mat);
     void  RemoveOutliers(cv::Mat& ogm_mat,int i,int j);
     bool WriteToGrid(const cv::Mat &cv_gridmap,nav_msgs::OccupancyGrid &gridmap);
     bool InflateGradMap(const nav_msgs::OccupancyGrid &gridmap,nav_msgs::OccupancyGrid &inflated_gridmap);
@@ -59,6 +63,7 @@ class ElevationRasterization: public RasterizationInterface {
 
     nav_msgs::OccupancyGrid inflated_gridmap_;
     std::string json_path_;
+
 };
 }
 

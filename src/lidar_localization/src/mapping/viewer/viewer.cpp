@@ -38,6 +38,7 @@ bool Viewer::InitWithConfig() {
     InitFilter("local_map", local_map_filter_ptr_, config_node);
     InitFilter("global_map", global_map_filter_ptr_, config_node);
     InitFilter("global_map_ground", global_map_ground_filter_ptr_, config_node);
+    InitFilter("global_map_ground_grid", global_map_ground_grid_filter_ptr_, config_node);
     InitRasterization("global_map", map_rasterization_ptr_, config_node);
 
     return true;
@@ -245,14 +246,32 @@ bool Viewer::JointCloudMap(const std::deque<KeyFrame>& key_frames, CloudData::CL
             *map_cloud_ptr += *cloud_ptr;
         }else{
             CloudData::CLOUD_PTR cloud_out_ptr(new CloudData::CLOUD());
+            CloudData::CLOUD_PTR cloud_out_grid_ptr(new CloudData::CLOUD());
             file_path = key_frames_path_ + "/key_frame_" + std::to_string(key_frames.at(i).index) + ".pcd";
             pcl::io::loadPCDFile(file_path, *cloud_ptr);
+
             pcl::transformPointCloud(*cloud_ptr, *cloud_ptr, key_frames.at(i).pose);
+
+            if(cloud_ptr->points.size()){
+                std::string post_file_path = key_frames_path_ + "/f_key_frame_" + std::to_string(key_frames.at(i).index) + ".pcd";
+                pcl::io::savePCDFileBinary(post_file_path, *cloud_ptr);
+            }
+
             global_map_ground_filter_ptr_->Filter(cloud_ptr,cloud_out_ptr);
-            
-            std::string post_file_path = post_key_frames_path_ + "/post_key_frame_" + std::to_string(key_frames.at(i).index) + ".pcd";
-            pcl::io::savePCDFileBinary(post_file_path, *cloud_out_ptr);
-            *map_cloud_ptr += *cloud_out_ptr;
+
+            if(cloud_out_ptr->points.size()){
+                std::string post_file_path = post_key_frames_path_ + "/post_f_key_frame_" + std::to_string(key_frames.at(i).index) + ".pcd";
+                pcl::io::savePCDFileBinary(post_file_path, *cloud_out_ptr);
+            }
+
+            global_map_ground_grid_filter_ptr_->Filter(cloud_out_ptr,cloud_out_grid_ptr);
+
+            if(cloud_out_grid_ptr->points.size()){
+                std::string post_file_path = post_key_frames_path_ + "/post_key_frame_" + std::to_string(key_frames.at(i).index) + ".pcd";
+                pcl::io::savePCDFileBinary(post_file_path, *cloud_out_grid_ptr);
+            }
+
+            *map_cloud_ptr += *cloud_out_grid_ptr;
         }
     }
     return true;

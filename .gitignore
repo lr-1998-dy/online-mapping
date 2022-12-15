@@ -6,4 +6,5 @@ build/
 .vscode/
 src.zip
 map/
-
+slam_data/
+slam_data1/

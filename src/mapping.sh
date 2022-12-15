@@ -1,4 +1,12 @@
 root_dir1="/home/mdc/tool/grid_map_record"
+###
+ # @Author: lr 2012227985@qq.com
+ # @Date: 2022-12-05 10:29:39
+ # @LastEditors: lr 2012227985@qq.com
+ # @LastEditTime: 2022-12-12 00:09:47
+ # @FilePath: /online-mapping/src/mapping.sh
+ # @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+### 
 root_dir2="/disk3/data/"
 
 child_dir=$(date +%Y%m%d)
@@ -35,7 +43,7 @@ case $1 in
     rosservice call /optimize_map
     sleep 5
     rosservice call /save_map
-    sleep 20
+    sleep 30
     echo -e "已经建完地图，等10秒钟将自动启动擦除障碍物程序"
     pkill ros
     pkill rviz

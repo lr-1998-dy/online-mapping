@@ -65,9 +65,11 @@ bool ElevationRasterization::CreateGridMap(const CloudData::CLOUD_PTR& cloud_map
     nav_msgs::OccupancyGrid gridmap;
     cv::Mat cv_gridmap;
     cv::Mat cv_pointscount;
-    CreateInitialMap(cloud_map,gridmap,cv_gridmap,cv_pointscount);
+    cv::Mat cv_occupy;
+
+    CreateInitialMap(cloud_map,gridmap,cv_gridmap,cv_pointscount,cv_occupy);
     Erode(cv_gridmap);
-    Dilate(cv_gridmap);
+    Dilate(cv_gridmap,cv_occupy);
     WriteToGrid(cv_gridmap,gridmap);
     InflateGradMap(gridmap,inflated_gridmap_);
     WriteToNewJson(inflated_gridmap_);
@@ -81,7 +83,7 @@ bool ElevationRasterization::CreateGridMap(const CloudData::CLOUD_PTR& cloud_map
  * @param {OccupancyGrid} &gridmap
  * @return {*}
  */
-bool ElevationRasterization::CreateInitialMap(const CloudData::CLOUD_PTR& cloud_map,nav_msgs::OccupancyGrid &gridmap,cv::Mat &cv_gridmap,cv::Mat &cv_pointscount) {
+bool ElevationRasterization::CreateInitialMap(const CloudData::CLOUD_PTR& cloud_map,nav_msgs::OccupancyGrid &gridmap,cv::Mat &cv_gridmap,cv::Mat &cv_pointscount,cv::Mat &cv_occupy) {
 
     gridmap.header.seq = 0;
     gridmap.header.stamp = ros::Time::now();
@@ -130,8 +132,8 @@ bool ElevationRasterization::CreateInitialMap(const CloudData::CLOUD_PTR& cloud_
     gridmap.info.origin.orientation.z = 0.0;
     gridmap.info.origin.orientation.w = 1.0;
 
-    gridmap.info.width = int((x_max - x_min) / map_resolution_);
-    gridmap.info.height = int((y_max - y_min) / map_resolution_);
+    gridmap.info.width = int((x_max - x_min) / map_resolution_)+5;
+    gridmap.info.height = int((y_max - y_min) / map_resolution_)+5;
 
     //initialize the two vectors
     std::vector<std::vector<float>> maxheight(gridmap.info.height);
@@ -175,6 +177,7 @@ bool ElevationRasterization::CreateInitialMap(const CloudData::CLOUD_PTR& cloud_
     gridmap.data.assign(gridmap.info.width * gridmap.info.height, 0);
     cv_gridmap=cv::Mat(gridmap.info.height, gridmap.info.width, CV_8UC1);
     cv_pointscount=cv::Mat(gridmap.info.height, gridmap.info.width, CV_8UC1);
+    cv_occupy=cv::Mat(gridmap.info.height, gridmap.info.width, CV_8UC1);
 
     for (int i = 0; i < gridmap.info.height; i++)
     {
@@ -182,6 +185,7 @@ bool ElevationRasterization::CreateInitialMap(const CloudData::CLOUD_PTR& cloud_
         {
             cv_gridmap.at<uint8_t>(i, j)=0;
             cv_pointscount.at<uint8_t>(i, j)=0;
+            cv_occupy.at<uint8_t>(i, j)=0;
             if (maxheight[i][j] - minheight[i][j] > height_threshold_ && count[i][j] > count_threshold_)
             {
                 int index = j + i * gridmap.info.width;
@@ -189,30 +193,59 @@ bool ElevationRasterization::CreateInitialMap(const CloudData::CLOUD_PTR& cloud_
                 cv_gridmap.at<uint8_t>(i, j)=100; 
                 cv_pointscount.at<uint8_t>(i, j)=count[i][j];
             }
+
+            if (count[i][j] > count_threshold_+10){
+                cv_gridmap.at<uint8_t>(i, j)=100; 
+            }
+
+            if (count[i][j] > count_threshold_+12&&count[i+1][j+1]>count_threshold_+12&&count[i+2][j+2]>count_threshold_+12)
+            {
+                cv_occupy.at<uint8_t>(i, j)=100; 
+            }
+
         }
     }
+
+    if (bool_visual_)
+    {
+        cv::namedWindow("occupy地图", CV_WINDOW_NORMAL);
+        cv::imshow("occupy地图", cv_occupy);
+        cv::waitKey(0);
+    }
+
+    cv::Mat erode_element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2, 2));
+    cv::erode(cv_occupy, cv_occupy, erode_element);
+
+    if (bool_visual_)
+    {
+        cv::namedWindow("occupy地图", CV_WINDOW_NORMAL);
+        cv::imshow("occupy地图", cv_occupy);
+        cv::waitKey(0);
+    }
+
 
     return true;
 }
 
-void ElevationRasterization::AddFalseNegatives(cv::Mat& ogm_mat,int i,int j){
-    int count=0;
+void ElevationRasterization::AddFalseNegatives(const CloudData::CLOUD_PTR& cloud_map,cv::Mat& ogm_mat){
+  
+    // int count=0;
 
-    for (int col=i-1; col < i+2; col++)
-    {
-        for (int row=j-1; row< j+2; row++)
-        {
-            if (ogm_mat.at<uint8_t>(col, row)==100)
-            {
-                count ++;
-            }
-        }
-    }
+    // for (int col=i-1; col < i+2; col++)
+    // {
+    //     for (int row=j-1; row< j+2; row++)
+    //     {
+    //         if (ogm_mat.at<uint8_t>(col, row)==100)
+    //         {
+    //             count ++;
+    //         }
+    //     }
+    // }
 
-    if (count>=1)
-    {
-        ogm_mat.at<uint8_t>(i, j) =50;
-    }
+    // if (count>=1)
+    // {
+    //     ogm_mat.at<uint8_t>(i, j) =50;
+    // }
 }
 
 void ElevationRasterization::RemoveOutliers(cv::Mat& ogm_mat,int i,int j){
@@ -313,9 +346,30 @@ bool ElevationRasterization::Erode(cv::Mat &cv_gridmap){
     return true;
 }
 
-bool ElevationRasterization::Dilate(cv::Mat &cv_gridmap){
+bool ElevationRasterization::Dilate(cv::Mat &cv_gridmap,const cv::Mat &cv_occupy){
+
+    // for (int i = 0; i < cv_gridmap.rows; i++)
+    // {
+    //     for (int j = 0; j < cv_gridmap.cols; j++)
+    //     {
+    //         if (cv_gridmap.at<uint8_t>(i, j) == 0&&cv_occupy.at<uint8_t>(i, j) == 100)
+    //         {
+    //             cv_gridmap.at<uint8_t>(i, j) = 100;
+    //         }   
+    //     }
+    // }
+
+    // if (bool_visual_)
+    // {
+    //     cv::namedWindow("添加occpy后地图", CV_WINDOW_NORMAL);
+    //     cv::imshow("添加occpy后地图", cv_gridmap);
+    //     cv::waitKey(0);
+    // }
 
     cv::Mat dilate_element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2, 2));
+    cv::dilate(cv_gridmap, cv_gridmap, dilate_element);
+
+    // cv::Mat dilate_element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2, 2));
     cv::dilate(cv_gridmap, cv_gridmap, dilate_element);
 
     if (bool_visual_)
@@ -324,6 +378,7 @@ bool ElevationRasterization::Dilate(cv::Mat &cv_gridmap){
         cv::imshow("膨胀后地图", cv_gridmap);
         cv::waitKey(0);
     }
+
 
     //未完待续
     // for (int i = 0; i < cv_gridmap.rows; i++)

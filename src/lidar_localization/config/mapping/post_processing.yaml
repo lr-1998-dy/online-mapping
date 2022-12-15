@@ -5,8 +5,8 @@ map_path: ./   # 地图存放路径,本电脑或者mdc上的路径
 # 之所以要提供no_filter（即不滤波）模式，是因为闭环检测对计算时间要求没那么高，而点云越稠密，精度就越高，所以滤波与否都有道理
 map_filter: voxel_filter # 选择滑窗地图点云滤波方法，目前支持：voxel_filter、no_filter
 
-global_map_filter: ground_filter # 选择地面滤除的滤波方法，目前支持：pcl::ransac、pcl::ransac_with_normal
-# global_map_filter: ground_filter_with_normal
+# global_map_filter: ground_filter # 选择地面滤除的滤波方法，目前支持：pcl::ransac、pcl::ransac_with_normal
+global_map_filter: ground_filter_with_normal
 # global_map_filter: ground_filter_with_grid
 
 global_map_outlier_filter: outlier_filter
@@ -31,7 +31,7 @@ ground_filter_with_normal:
 ground_filter_with_grid:
     count_threshold : 3
     height_threshold : 0.2
-    map_resolution: 0.3
+    map_resolution: 0.5
 #postmap地面滤除相关参数
 post_ground_filter:
     opt_coeff : 1
