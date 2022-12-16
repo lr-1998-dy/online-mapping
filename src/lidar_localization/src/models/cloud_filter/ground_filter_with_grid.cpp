@@ -2,7 +2,7 @@
  * @Description: 利用栅格单帧删除地面点
  * @Autor: Li Rui
  * @Date: 2022-09-04 13:36:47
- * @LastEditTime: 2022-12-15 09:10:35
+ * @LastEditTime: 2022-12-16 08:51:09
  */
 
 #include "lidar_localization/models/cloud_filter/ground_filter_with_grid.hpp"
@@ -139,9 +139,9 @@ bool GridGroundFilter::CreateInitialMap(const CloudData::CLOUD_PTR& input_cloud_
                 count_cv++;
             }
 
-            if (count.at<uint8_t>(i, j)>= (count_threshold_+2)&&maxheight.at<uint8_t>(i, j) - minheight.at<uint8_t>(i, j) >= (height_threshold_+0.03))
+            if (count.at<uint8_t>(i, j)>= (count_threshold_+2)||maxheight.at<uint8_t>(i, j) - minheight.at<uint8_t>(i, j) >= (height_threshold_+0.03))
             {
-                occupy_mat.at<uint8_t>(i, j)=100;
+                occupy_mat.at<uint8_t>(i, j)=100; 
             }
 
         }
@@ -153,46 +153,95 @@ bool GridGroundFilter::CreateInitialMap(const CloudData::CLOUD_PTR& input_cloud_
     //     int y = int((input_cloud_ptr->points[i].y - y_min) / map_resolution_);
     //     {
 
-    for (int y = 0; y < ogm_mat_height; y++)
-    {
-        for (int x = 0; x < ogm_mat_width; x++)
-        {
+    //         int  count_neb=0;
+
+    //         if (ogm_mat.at<uint8_t>(y, x)==0)
+    //         {
+    //             for (int col=y-3; col < y+3; col++)
+    //             {
+    //                 if (col<0)
+    //                 {
+    //                     continue;
+    //                 }
+    //                 for (int row=x-3; row< x+3; row++)
+    //                 {
+    //                     if (row<0)
+    //                     {
+    //                         continue;
+    //                     }
+
+    //                     if (ogm_mat.at<uint8_t>(col, row)==100)
+    //                     {
+    //                         count_neb++;
+    //                     }
+    //                 }
+    //             }
+
+    //             std::cout<<"count  "<<count_neb<<std::endl;
+
+    //             if (count_neb>=3)
+    //             {
+    //                 ogm_mat.at<uint8_t>(y, x)=100; 
+    //             }
+
+    //             count_neb=0;
+    //         }
+
+    //         // if (occupy_mat.at<uint8_t>(y, x)=100)
+    //         // {
+    //         //     ogm_mat.at<uint8_t>(y, x)=100; 
+    //         // }
+
+    //     }
+    // }
+
+
+    // for (int i = 0; i < input_cloud_ptr->points.size(); i++)
+    // {
+    //     int x = int((input_cloud_ptr->points[i].x - x_min) / map_resolution_);
+    //     int y = int((input_cloud_ptr->points[i].y - y_min) / map_resolution_);
+    // //     {
+
+    // // for (int y = 0; y < ogm_mat_height; y++)
+    // // {
+    // //     for (int x = 0; x < ogm_mat_width; x++)
+    // //     {
             
-            if(ogm_mat.at<uint8_t>(y, x)==0)
-            {
-                int occupy_count=0;
-                for (int col=y-7; col < y+7; col++)
-                {
-                    if (col<0)
-                    {
-                        continue;
-                    }
-                    for (int row=x-7; row< x+7; row++)
-                    {
-                        if (row<0)
-                        {
-                            continue;
-                        }
+    //         if(ogm_mat.at<uint8_t>(y, x)==0)
+    //         {
+    //             int occupy_count=0;
+    //             for (int col=y-7; col < y+7; col++)
+    //             {
+    //                 if (col<0)
+    //                 {
+    //                     continue;
+    //                 }
+    //                 for (int row=x-7; row< x+7; row++)
+    //                 {
+    //                     if (row<0)
+    //                     {
+    //                         continue;
+    //                     }
 
-                        if (ogm_mat.at<uint8_t>(col, row)==100)
-                        {
-                            occupy_count++;
-                        }
-                    }
-                }
-                if (occupy_count>=3)
-                {
-                    ogm_mat.at<uint8_t>(y, x)=100;
-                }
-                occupy_count=0;
-            }
+    //                     if (ogm_mat.at<uint8_t>(col, row)==100)
+    //                     {
+    //                         occupy_count++;
+    //                     }
+    //                 }
+    //             }
+    //             if (occupy_count>=3)
+    //             {
+    //                 ogm_mat.at<uint8_t>(y, x)=100;
+    //             }
+    //             occupy_count=0;
+    //         }
 
-            if (occupy_mat.at<uint8_t>(y, x)==100)
-            {
-                ogm_mat.at<uint8_t>(y, x)=100; 
-            }
-        }
-    }
+    //         if (occupy_mat.at<uint8_t>(y, x)==100)
+    //         {
+    //             ogm_mat.at<uint8_t>(y, x)=100; 
+    //         }
+    //     }
+    // }
     
     
     LOG(ERROR) << "error "<<count_cv;

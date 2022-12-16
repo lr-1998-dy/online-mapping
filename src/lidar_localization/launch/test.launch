@@ -8,3 +8,6 @@
     <node pkg="lidar_localization"  type="viewer_node"  name="viewer_node"  output="screen"></node> -->
     <!-- <node pkg="lidar_localization"  type="post_processing_node"  name="post_processing_node"  output="screen"></node> -->
 </launch>
+
+
+

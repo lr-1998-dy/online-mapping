@@ -3,7 +3,7 @@
     <!-- <arg name="arg_json_file_path" default="/home/lr/Downloads/qq-files/2012227985/file_recv/bb95/bb95_global_map(0608).json"/> -->
     <!-- <arg name="arg_json_file_path" default="/home/lr/Downloads/qq-files/2012227985/file_recv/110_e/110empty_global_map.json"/> -->
     <!-- <arg name="arg_json_file_path" default="/home/lr/Downloads/qq-files/2012227985/file_recv/110/110_global_map.json"/> -->
-    <arg name="arg_json_file_path" default="/media/lirui/LENOVO_USB_HDD/Haibo_dataset/gridmap/20221104/global_map.json"/>
+    <arg name="arg_json_file_path" default="/home/lirui/online-mapping/src/lidar_localization/slam_data/map/global_map.json"/>
 
 
     <param name="json_file_path" type="string" value="$(arg arg_json_file_path)" />

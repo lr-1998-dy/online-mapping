@@ -34,7 +34,7 @@ voxel_filter:
 
 ground_filter:
     opt_coeff : 1
-    dist_threshold : 0.45
+    dist_threshold : 0.35
     max_iter : 1000
 # 去除outlier点
 outlier_filter:
@@ -43,22 +43,22 @@ outlier_filter:
 # 利用法向量做地面滤除的相关参数 
 ground_filter_with_normal:
     opt_coeff : 1
-    dist_threshold : 0.45
+    dist_threshold : 0.35
     max_iter : 1000
 # 利用栅格做地面滤除的相关参数
 ground_filter_with_grid:
-    count_threshold : 3
-    height_threshold : 0.2
-    map_resolution: 0.5
+    count_threshold : 2
+    height_threshold : 0.03
+    map_resolution: 2.5
 
 #生成栅格的相关参数
 elevation_rasterization:
-    count_threshold : 6
-    height_threshold : 0.35
+    count_threshold : 5
+    height_threshold : 0.25
     inflation_map_x : 150
     inflation_map_y : 150
     map_resolution: 1
-    outliers_dis: 12
+    outliers_dis: 10
     bool_visual: true
 
 

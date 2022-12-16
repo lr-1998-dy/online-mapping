@@ -194,11 +194,11 @@ bool ElevationRasterization::CreateInitialMap(const CloudData::CLOUD_PTR& cloud_
                 cv_pointscount.at<uint8_t>(i, j)=count[i][j];
             }
 
-            if (count[i][j] > count_threshold_+10){
+            if (count[i][j] > count_threshold_+6){
                 cv_gridmap.at<uint8_t>(i, j)=100; 
             }
 
-            if (count[i][j] > count_threshold_+12&&count[i+1][j+1]>count_threshold_+12&&count[i+2][j+2]>count_threshold_+12)
+            if (count[i][j] > count_threshold_+9)
             {
                 cv_occupy.at<uint8_t>(i, j)=100; 
             }
@@ -279,8 +279,11 @@ bool ElevationRasterization::Erode(cv::Mat &cv_gridmap){
     }
     
     //利用opencv进行腐蚀与膨胀
-    cv::Mat erode_element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2, 2));
+    cv::Mat erode_element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(1, 2));
+    cv::Mat erode_element_1 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2, 1));
     cv::erode(cv_gridmap, cv_gridmap, erode_element);
+    cv::erode(cv_gridmap, cv_gridmap, erode_element_1);
+
 
     if (bool_visual_)
     {
@@ -289,59 +292,59 @@ bool ElevationRasterization::Erode(cv::Mat &cv_gridmap){
         cv::waitKey(0);
     }
     
-    for (int i = 0; i < cv_gridmap.rows; i++)
-    {
-        for (int j = 0; j < cv_gridmap.cols; j++)
-        {
-            if (cv_gridmap.at<uint8_t>(i, j) == 100&&(i>outliers_dis_)&&(i<cv_gridmap.rows-outliers_dis_)&&(j>outliers_dis_)&&(j<cv_gridmap.cols-outliers_dis_))
-            {
-                RemoveOutliers(cv_gridmap,i,j);
-            }   
-        }
-    }
+    // for (int i = 0; i < cv_gridmap.rows; i++)
+    // {
+    //     for (int j = 0; j < cv_gridmap.cols; j++)
+    //     {
+    //         if (cv_gridmap.at<uint8_t>(i, j) == 100&&(i>outliers_dis_)&&(i<cv_gridmap.rows-outliers_dis_)&&(j>outliers_dis_)&&(j<cv_gridmap.cols-outliers_dis_))
+    //         {
+    //             RemoveOutliers(cv_gridmap,i,j);
+    //         }   
+    //     }
+    // }
 
-    if (bool_visual_)
-    {
-        cv::namedWindow("去除离群点后地图", CV_WINDOW_NORMAL);
-        cv::imshow("去除离群点后地图", cv_gridmap);
-        cv::waitKey(0);
-    }
+    // if (bool_visual_)
+    // {
+    //     cv::namedWindow("去除离群点后地图", CV_WINDOW_NORMAL);
+    //     cv::imshow("去除离群点后地图", cv_gridmap);
+    //     cv::waitKey(0);
+    // }
 
-    for (int i = 0; i < cv_gridmap.rows; i++)
-    {
-        for (int j = 0; j < cv_gridmap.cols; j++)
-        {
-            if (cv_gridmap.at<uint8_t>(i, j) == 100&&(i>15)&&(i<cv_gridmap.rows-15)&&(j>15)&&(j<cv_gridmap.cols-15))
-            {
-                RemoveOutliers(cv_gridmap,i,j);
-            }   
-        }
-    }
+    // for (int i = 0; i < cv_gridmap.rows; i++)
+    // {
+    //     for (int j = 0; j < cv_gridmap.cols; j++)
+    //     {
+    //         if (cv_gridmap.at<uint8_t>(i, j) == 100&&(i>15)&&(i<cv_gridmap.rows-15)&&(j>15)&&(j<cv_gridmap.cols-15))
+    //         {
+    //             RemoveOutliers(cv_gridmap,i,j);
+    //         }   
+    //     }
+    // }
 
-    if (bool_visual_)
-    {
-        cv::namedWindow("2次去除离群点后地图", CV_WINDOW_NORMAL);
-        cv::imshow("2次去除离群点后地图", cv_gridmap);
-        cv::waitKey(0);
-    }
+    // if (bool_visual_)
+    // {
+    //     cv::namedWindow("2次去除离群点后地图", CV_WINDOW_NORMAL);
+    //     cv::imshow("2次去除离群点后地图", cv_gridmap);
+    //     cv::waitKey(0);
+    // }
 
-    for (int i = 0; i < cv_gridmap.rows; i++)
-    {
-        for (int j = 0; j < cv_gridmap.cols; j++)
-        {
-            if (cv_gridmap.at<uint8_t>(i, j) == 100&&(i>15)&&(i<cv_gridmap.rows-15)&&(j>15)&&(j<cv_gridmap.cols-15))
-            {
-                RemoveOutliers(cv_gridmap,i,j);
-            }   
-        }
-    }
+    // for (int i = 0; i < cv_gridmap.rows; i++)
+    // {
+    //     for (int j = 0; j < cv_gridmap.cols; j++)
+    //     {
+    //         if (cv_gridmap.at<uint8_t>(i, j) == 100&&(i>15)&&(i<cv_gridmap.rows-15)&&(j>15)&&(j<cv_gridmap.cols-15))
+    //         {
+    //             RemoveOutliers(cv_gridmap,i,j);
+    //         }   
+    //     }
+    // }
 
-    if (bool_visual_)
-    {
-        cv::namedWindow("3次去除离群点后地图", CV_WINDOW_NORMAL);
-        cv::imshow("3次去除离群点后地图", cv_gridmap);
-        cv::waitKey(0);
-    }
+    // if (bool_visual_)
+    // {
+    //     cv::namedWindow("3次去除离群点后地图", CV_WINDOW_NORMAL);
+    //     cv::imshow("3次去除离群点后地图", cv_gridmap);
+    //     cv::waitKey(0);
+    // }
 
     return true;
 }
@@ -361,25 +364,51 @@ bool ElevationRasterization::Dilate(cv::Mat &cv_gridmap,const cv::Mat &cv_occupy
 
     // if (bool_visual_)
     // {
-    //     cv::namedWindow("添加occpy后地图", CV_WINDOW_NORMAL);
-    //     cv::imshow("添加occpy后地图", cv_gridmap);
+    //     cv::namedWindow("添加occupy后地图", CV_WINDOW_NORMAL);
+    //     cv::imshow("添加occupy后地图", cv_gridmap);
     //     cv::waitKey(0);
     // }
 
     cv::Mat dilate_element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2, 2));
     cv::dilate(cv_gridmap, cv_gridmap, dilate_element);
 
-    // cv::Mat dilate_element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2, 2));
-    cv::dilate(cv_gridmap, cv_gridmap, dilate_element);
+    // // cv::Mat dilate_element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2, 2));
+    // cv::dilate(cv_gridmap, cv_gridmap, dilate_element);
+
+    // if (bool_visual_)
+    // {
+    //     cv::namedWindow("膨胀后地图", CV_WINDOW_NORMAL);
+    //     cv::imshow("膨胀后地图", cv_gridmap);
+    //     cv::waitKey(0);
+    // }
+
+
+    // for (int i = 0; i < cv_gridmap.rows; i++)
+    // {
+    //     for (int j = 0; j < cv_gridmap.cols; j++)
+    //     {
+    //         if (cv_gridmap.at<uint8_t>(i, j) == 100&&(i>outliers_dis_)&&(i<cv_gridmap.rows-outliers_dis_)&&(j>outliers_dis_)&&(j<cv_gridmap.cols-outliers_dis_))
+    //         {
+    //             RemoveOutliers(cv_gridmap,i,j);
+    //         }   
+    //     }
+    // }
+
+    // if (bool_visual_)
+    // {
+    //     cv::namedWindow("去除离群点地图", CV_WINDOW_NORMAL);
+    //     cv::imshow("去除离群点地图", cv_gridmap);
+    //     cv::waitKey(0);
+    // }
+
+    // cv::dilate(cv_gridmap, cv_gridmap, dilate_element);
 
     if (bool_visual_)
     {
-        cv::namedWindow("膨胀后地图", CV_WINDOW_NORMAL);
-        cv::imshow("膨胀后地图", cv_gridmap);
+        cv::namedWindow("膨胀后的地图", CV_WINDOW_NORMAL);
+        cv::imshow("膨胀后的地图", cv_gridmap);
         cv::waitKey(0);
     }
-
-
     //未完待续
     // for (int i = 0; i < cv_gridmap.rows; i++)
     // {
