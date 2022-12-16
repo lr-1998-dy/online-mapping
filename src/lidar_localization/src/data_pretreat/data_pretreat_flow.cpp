@@ -15,8 +15,8 @@
 namespace lidar_localization {
 DataPretreatFlow::DataPretreatFlow(ros::NodeHandle& nh) {
     // subscriber
-    cloud_sub_ptr_ = std::make_shared<CloudSubscriber>(nh, "/lidar_aeb/raw_points", 100000);
-    imu_sub_ptr_ = std::make_shared<IMUHaiboSubscriber>(nh, "/imu_data", 1000000);
+    cloud_sub_ptr_ = std::make_shared<CloudSubscriber>(nh, "/livox_undistort", 100000);
+    imu_sub_ptr_ = std::make_shared<IMUDandongSubscriber>(nh, "/livox/loc", 1000000);
     // publisher
     cloud_pub_ptr_ = std::make_shared<CloudPublisher>(nh, "/synced_cloud", "/velo_link", 100);
     gnss_pub_ptr_ = std::make_shared<OdometryPublisher>(nh, "/synced_gnss", "/map", "/velo_link", 100);
@@ -33,6 +33,7 @@ bool DataPretreatFlow::Run() {
     if (!InitFilter())
         return false;
 
+
     if (!ReadData())
         return false;
 
@@ -42,6 +43,7 @@ bool DataPretreatFlow::Run() {
 
         TransformData();
         PublishData();
+
     }
 
     return true;
@@ -50,7 +52,7 @@ bool DataPretreatFlow::Run() {
 bool DataPretreatFlow::ReadData() {
     cloud_sub_ptr_->ParseData(cloud_data_buff_);
 
-    static std::deque<IMUHaiboData> unsynced_imu_;
+    static std::deque<IMUDandongData> unsynced_imu_;
 
     imu_sub_ptr_->ParseData(unsynced_imu_);
 
@@ -58,7 +60,7 @@ bool DataPretreatFlow::ReadData() {
         return false;
 
     double cloud_time = cloud_data_buff_.front().time;
-    bool valid_imu = IMUHaiboData::SyncData(unsynced_imu_, imu_data_buff_, cloud_time);
+    bool valid_imu = IMUDandongData::SyncData(unsynced_imu_, imu_data_buff_, cloud_time);
 
     static bool sensor_inited = false;
     if (!sensor_inited) {
@@ -104,7 +106,7 @@ bool DataPretreatFlow::InitGNSS() {
         double ori_latitude_=config_node["map"]["ori_latitude_"].as<double>();
         double ori_altitude_=config_node["map"]["ori_altitude_"].as<double>();
 
-        IMUHaiboData imu_data=imu_data_buff_.front();
+        IMUDandongData imu_data=imu_data_buff_.front();
         imu_data.InitOriginPosition(ori_latitude_,ori_longitude_,ori_altitude_);
 
         gnss_inited = true;

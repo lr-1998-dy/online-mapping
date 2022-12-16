@@ -10,7 +10,7 @@
 #include <ros/ros.h>
 // subscriber
 #include "lidar_localization/subscriber/cloud_subscriber.hpp"
-#include "lidar_localization/subscriber/imu_haibo_subscriber.hpp"
+#include "lidar_localization/subscriber/imu_dandong_subscriber.hpp"
 #include "lidar_localization/subscriber/velocity_subscriber.hpp"
 #include "lidar_localization/subscriber/gnss_subscriber.hpp"
 #include "lidar_localization/tf_listener/tf_listener.hpp"
@@ -44,7 +44,7 @@ class DataPretreatFlow {
   private:
     // subscriber
     std::shared_ptr<CloudSubscriber> cloud_sub_ptr_;
-    std::shared_ptr<IMUHaiboSubscriber> imu_sub_ptr_;
+    std::shared_ptr<IMUDandongSubscriber> imu_sub_ptr_;
     // std::shared_ptr<VelocitySubscriber> velocity_sub_ptr_;
     // std::shared_ptr<GNSSSubscriber> gnss_sub_ptr_;
     // std::shared_ptr<TFListener> lidar_to_imu_ptr_;
@@ -57,12 +57,12 @@ class DataPretreatFlow {
     Eigen::Matrix4f lidar_to_imu_ = Eigen::Matrix4f::Identity();
 
     std::deque<CloudData> cloud_data_buff_;
-    std::deque<IMUHaiboData> imu_data_buff_;
+    std::deque<IMUDandongData> imu_data_buff_;
     // std::deque<VelocityData> velocity_data_buff_;
     // std::deque<GNSSData> gnss_data_buff_;
 
     CloudData current_cloud_data_;
-    IMUHaiboData current_imu_data_;
+    IMUDandongData current_imu_data_;
     // VelocityData current_velocity_data_;
     // GNSSData current_gnss_data_;
     CloudData filtered_cloud_data_;

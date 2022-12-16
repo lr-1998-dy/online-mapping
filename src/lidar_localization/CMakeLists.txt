@@ -43,6 +43,10 @@ include(cmake/eigen.cmake)
 include(cmake/geographic.cmake)
 include(cmake/g2o.cmake)
 include(cmake/opencv2.cmake)
+#lxm add
+find_package(yaml-cpp REQUIRED)
+include_directories(${YAML_CPP_INCLUDE_DIRS})
+list(APPEND ALL_TARGET_LIBRARIES ${YAML_CPP_LIBRARIES})
 
 
 include_directories(include ${catkin_INCLUDE_DIRS})
@@ -59,8 +63,9 @@ add_executable(test_frame_node src/apps/test_frame_node.cpp ${ALL_SRCS})
 target_link_libraries(test_frame_node ${catkin_LIBRARIES} ${ALL_TARGET_LIBRARIES})
 
 add_executable(data_pretreat_node src/apps/data_pretreat_node.cpp ${ALL_SRCS})
-add_dependencies(data_pretreat_node ${catkin_EXPORTED_TARGETS} stopMapping_gencpp)
+add_dependencies(data_pretreat_node ${catkin_EXPORTED_TARGETS})
 target_link_libraries(data_pretreat_node ${catkin_LIBRARIES} ${ALL_TARGET_LIBRARIES})
+
 
 add_executable(front_end_node src/apps/front_end_node.cpp ${ALL_SRCS})
 add_dependencies(front_end_node ${catkin_EXPORTED_TARGETS})

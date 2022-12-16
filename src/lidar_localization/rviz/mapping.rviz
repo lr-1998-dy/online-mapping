@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /Image1
         - /PointCloud1
       Splitter Ratio: 0.5
     Tree Height: 425
@@ -55,7 +56,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/Image
       Enabled: true
-      Image Topic: /kitti/camera_color_left/image_raw
+      Image Topic: /zkhy_stereo/left/color
       Max Value: 1
       Median window: 5
       Min Value: 0
@@ -70,8 +71,8 @@ Visualization Manager:
         - Alpha: 0.30000001192092896
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: -1.1688487529754639
-            Min Value: -22.095991134643555
+            Max Value: 16.664234161376953
+            Min Value: -2.5692691802978516
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -237,25 +238,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 549.0172119140625
+      Distance: 170.32479858398438
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 310.47869873046875
-        Y: 403.3136291503906
-        Z: -46.26874542236328
+        X: 32.6240234375
+        Y: 1.098138451576233
+        Z: -8.746219635009766
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8897963762283325
+      Pitch: 1.089796781539917
       Target Frame: base_link
       Value: Orbit (rviz)
-      Yaw: 5.6397385597229
+      Yaw: 3.014727830886841
     Saved: ~
 Window Geometry:
   Displays:
@@ -276,4 +277,4 @@ Window Geometry:
     collapsed: false
   Width: 1540
   X: 67
-  Y: 77
+  Y: 47

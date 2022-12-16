@@ -6,7 +6,7 @@
 #include <ros/ros.h>
 #include "glog/logging.h"
 
-#include <lidar_localization/stopMapping.h>
+#include "lidar_localization/stopMapping.h"
 #include "lidar_localization/global_defination/global_defination.h"
 #include "lidar_localization/data_pretreat/data_pretreat_flow.hpp"
 
