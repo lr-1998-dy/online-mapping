@@ -27,14 +27,11 @@ void IMUDandongSubscriber::msg_callback(const sensor_msgs::ImuConstPtr& imu_msg_
     imu_data.euler_angles.yall=imu_msg_ptr->angular_velocity_covariance[2];
     Eigen::Matrix3d matrix = Eigen::Matrix3d::Identity(3, 3);
 
-        matrix = Eigen::AngleAxisd(imu_data.euler_angles.yall * imu_data.torad_, Eigen::Vector3d::UnitZ()) *
-                Eigen::AngleAxisd(imu_data.euler_angles.roll *imu_data.torad_, Eigen::Vector3d::UnitX()) *
-                Eigen::AngleAxisd(imu_data.euler_angles.pitch *imu_data.torad_, Eigen::Vector3d::UnitY());
-        Eigen::Matrix3d matrix_lidar2rtk = Eigen::Matrix3d::Identity();
-        matrix_lidar2rtk << 0, -1, 0,
-                                            1, 0, 0,
-                                            0, 0, 1;
-    imu_data.orientation=matrix.inverse()*matrix_lidar2rtk;
+    matrix = Eigen::AngleAxisd(imu_data.euler_angles.yall , Eigen::Vector3d::UnitZ()) *
+    Eigen::AngleAxisd(imu_data.euler_angles.roll , Eigen::Vector3d::UnitX()) *
+    Eigen::AngleAxisd(imu_data.euler_angles.pitch , Eigen::Vector3d::UnitY());
+
+    imu_data.orientation=matrix;
     // position
     imu_data.position[0] = imu_msg_ptr->linear_acceleration_covariance[1] - 569880;
     imu_data.position[1] = imu_msg_ptr->linear_acceleration_covariance[2] - 4501440;
