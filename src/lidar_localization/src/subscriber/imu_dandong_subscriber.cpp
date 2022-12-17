@@ -23,14 +23,14 @@ void IMUDandongSubscriber::msg_callback(const sensor_msgs::ImuConstPtr& imu_msg_
     // imu_data.orientation.w() = imu_msg_ptr->orientation.w;
     // euler_angles
     imu_data.euler_angles.roll=imu_msg_ptr->angular_velocity_covariance[0];
-    imu_data.euler_angles.yall=imu_msg_ptr->angular_velocity_covariance[1];
-    imu_data.euler_angles.pitch=imu_msg_ptr->angular_velocity_covariance[2];
+    imu_data.euler_angles.pitch=imu_msg_ptr->angular_velocity_covariance[1];
+    imu_data.euler_angles.yall=imu_msg_ptr->angular_velocity_covariance[2];
     Eigen::Matrix3d matrix = Eigen::Matrix3d::Identity(3, 3);
 
         matrix = Eigen::AngleAxisd(imu_data.euler_angles.yall * imu_data.torad_, Eigen::Vector3d::UnitZ()) *
-                Eigen::AngleAxisd(imu_data.euler_angles.roll *imu_data.torad_, Eigen::Vector3d::UnitY()) *
-                Eigen::AngleAxisd(imu_data.euler_angles.pitch *imu_data.torad_, Eigen::Vector3d::UnitX());
-        Eigen::Matrix3d matrix_lidar2rtk;
+                Eigen::AngleAxisd(imu_data.euler_angles.roll *imu_data.torad_, Eigen::Vector3d::UnitX()) *
+                Eigen::AngleAxisd(imu_data.euler_angles.pitch *imu_data.torad_, Eigen::Vector3d::UnitY());
+        Eigen::Matrix3d matrix_lidar2rtk = Eigen::Matrix3d::Identity();
         matrix_lidar2rtk << 0, -1, 0,
                                             1, 0, 0,
                                             0, 0, 1;
