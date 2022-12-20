@@ -346,6 +346,7 @@ bool ElevationRasterization::Erode(cv::Mat &cv_gridmap){
     return true;
 }
 
+
 bool ElevationRasterization::Dilate(cv::Mat &cv_gridmap,const cv::Mat &cv_occupy){
 
     // for (int i = 0; i < cv_gridmap.rows; i++)
