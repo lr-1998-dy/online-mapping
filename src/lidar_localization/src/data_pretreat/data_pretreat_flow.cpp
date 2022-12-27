@@ -15,7 +15,7 @@
 namespace lidar_localization {
 DataPretreatFlow::DataPretreatFlow(ros::NodeHandle& nh) {
     // subscriber
-    cloud_sub_ptr_ = std::make_shared<CloudSubscriber>(nh, "/livox_undistort", 100000);
+    cloud_sub_ptr_ = std::make_shared<CloudSubscriber>(nh, "/livox/lidar_pc2", 100000);
     imu_sub_ptr_ = std::make_shared<IMUDandongSubscriber>(nh, "/livox/loc", 1000000);
     // publisher
     cloud_pub_ptr_ = std::make_shared<CloudPublisher>(nh, "/synced_cloud", "/velo_link", 100);
