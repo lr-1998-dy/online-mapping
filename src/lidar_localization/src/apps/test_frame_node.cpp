@@ -24,6 +24,7 @@ int main(int argc, char *argv[]) {
     google::InitGoogleLogging(argv[0]);
     FLAGS_log_dir = WORK_SPACE_PATH + "/Log";
     FLAGS_alsologtostderr = 1;
+    static int count=0;
 
     ros::init(argc, argv, "test_frame_node");
     ros::NodeHandle nh;
@@ -33,6 +34,8 @@ int main(int argc, char *argv[]) {
    std::shared_ptr<IMUSubscriber> imu_sub_ptr = std::make_shared<IMUSubscriber>(nh, "/kitti/oxts/imu", 1000000);
     // std::shared_ptr<GNSSSubscriber> gnss_sub_ptr = std::make_shared<GNSSSubscriber>(nh, "/kitti/oxts/gps/fix", 1000000);
     // std::shared_ptr<TFListener> lidar_to_imu_ptr = std::make_shared<TFListener>(nh, "velo_link", "imu_link");
+
+    CloudData::CLOUD_PTR map_cloud_ptr(new CloudData::CLOUD());
 
     std::shared_ptr<CloudPublisher> cloud_pub_ptr = std::make_shared<CloudPublisher>(nh, "current_scan", "/map", 100);
     std::shared_ptr<OdometryPublisher> odom_pub_ptr = std::make_shared<OdometryPublisher>(nh, "lidar_odom", "map", "lidar", 100);
@@ -73,6 +76,15 @@ int main(int argc, char *argv[]) {
                 pcl::transformPointCloud(*cloud_data.cloud_ptr, *cloud_data.cloud_ptr, odometry_matrix);
 
                 cloud_pub_ptr->Publish(cloud_data.cloud_ptr);
+
+
+                std::string file_path = "/home/lirui/online-mapping/src/lidar_localization/slam_data/test/" + std::to_string(count++) + ".pcd";
+                pcl::io::savePCDFileBinary(file_path, *cloud_data.cloud_ptr);
+
+                std::string map_path = "/home/lirui/online-mapping/src/lidar_localization/slam_data/test/map.pcd";
+                *map_cloud_ptr+=*cloud_data.cloud_ptr;
+                pcl::io::savePCDFileBinary(map_path, *map_cloud_ptr);
+
                 odom_pub_ptr->Publish(odometry_matrix);
             }
         }
